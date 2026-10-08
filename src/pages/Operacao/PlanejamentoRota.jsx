@@ -1,18 +1,11 @@
 import React from 'react';
 import { Search, Bell, MapPin } from 'lucide-react';
+import { useNavigate } from '../../components/NavigationContext';
 
 export default function PlanejamentoRota() {
+  const navigate = useNavigate();
   return (
-    <div className="flex min-h-screen bg-bioclube-light font-sans text-bioclube-textMain">
-      <aside className="hidden lg:flex lg:w-64 flex-shrink-0 bg-bioclube-dark text-white flex-col justify-between p-6">
-        <div>
-          <div className="flex items-center gap-2 mb-10">
-            <span className="bg-bioclube-amber text-bioclube-dark font-bold px-2 py-0.5 rounded text-xs">BC</span>
-            <span className="font-bold tracking-wider text-sm">BIOCIRCULAR</span>
-          </div>
-        </div>
-      </aside>
-
+    <div className="min-h-screen bg-bioclube-light font-sans text-bioclube-textMain">
       <main className="flex-1 flex flex-col">
         <header className="h-16 bg-white border-b border-bioclube-border px-4 md:px-8 flex items-center justify-between">
           <span className="text-xs text-bioclube-textSub">BIOCIRCULAR / <strong className="text-bioclube-textMain">Rotas</strong></span>
@@ -26,8 +19,7 @@ export default function PlanejamentoRota() {
               <p className="text-xs text-bioclube-textSub mt-1">Rota SP-08 · Pinheiros / Vila Madalena - 27/09/2026</p>
             </div>
             <div className="flex gap-2">
-              <button className="px-4 py-2 border border-bioclube-border rounded-lg text-xs font-bold">Otimizar sequência</button>
-              <button className="px-4 py-2 bg-bioclube-dark text-white rounded-lg text-xs font-bold">Publicar rota</button>
+              <button type="button" onClick={() => navigate('coletor-inicio')} className="px-4 py-2 bg-bioclube-dark text-white rounded-lg text-xs font-bold">Publicar rota</button>
             </div>
           </div>
 

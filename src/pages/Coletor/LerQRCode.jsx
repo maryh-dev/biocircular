@@ -1,39 +1,36 @@
 import React from 'react';
-import { ArrowLeft, Flashlight, Keyboard } from 'lucide-react';
+import { Flashlight, Keyboard } from 'lucide-react';
+import CollectorShell from '../../components/CollectorShell';
+import { useNavigate } from '../../components/NavigationContext';
 
 export default function LerQRCode() {
+  const navigate = useNavigate();
   return (
-    <div className="flex justify-center bg-gray-900 min-h-screen py-6">
-      <div className="w-[375px] bg-[#0B1726] text-white min-h-[812px] rounded-[40px] shadow-2xl overflow-hidden flex flex-col justify-between p-6 border-8 border-gray-800">
-        <div className="flex justify-between items-center pt-6">
-          <ArrowLeft className="w-5 h-5 text-white cursor-pointer" />
-          <h1 className="text-base font-bold">Ler QR Code</h1>
-          <div className="w-8 h-8 bg-[#C58A32] text-[#0B1726] font-bold rounded-full flex items-center justify-center text-xs">CA</div>
+    <CollectorShell title="Ler QR Code" dark>
+      <div className="flex min-h-[calc(100vh-7rem)] flex-col items-center text-center text-white">
+        <div className="space-y-2">
+          <p className="text-xs font-bold uppercase tracking-wide text-bioclube-amber">Etapa 1 de 3</p>
+          <p className="max-w-xs text-sm text-slate-300">Posicione o código do recipiente dentro da moldura.</p>
         </div>
 
-        <div className="text-center space-y-2">
-          <span className="text-[10px] font-bold text-[#C58A32] tracking-wider uppercase">Etapa 1 de 3</span>
-          <p className="text-xs text-gray-300">Posicione o código do recipiente dentro da moldura.</p>
+        <div className="relative mt-16 flex h-72 w-full max-w-xs items-center justify-center rounded-2xl border-2 border-bioclube-amber bg-white/5" aria-label="Área de leitura do QR Code">
+          <span className="absolute h-0.5 w-4/5 bg-bioclube-amber" aria-hidden="true" />
+          <span className="h-14 w-14 rounded-xl border-2 border-bioclube-amber/80" aria-hidden="true" />
         </div>
 
-        {/* Moldura de Leitura */}
-        <div className="w-full h-72 border-2 border-[#C58A32] rounded-2xl flex flex-col items-center justify-center relative bg-black/20">
-          <div className="absolute w-32 h-0.5 bg-[#C58A32]"></div>
+        <div className="mt-16 flex gap-10">
+          <button type="button" className="flex flex-col items-center gap-2 text-xs text-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-bioclube-amber">
+            <span className="rounded-full bg-[#16324F] p-4"><Flashlight className="h-5 w-5" aria-hidden="true" /></span>
+            Lanterna
+          </button>
+          <button type="button" onClick={() => navigate('coletor-qtd')} className="flex flex-col items-center gap-2 text-xs text-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-bioclube-amber">
+            <span className="rounded-full bg-[#16324F] p-4"><Keyboard className="h-5 w-5" aria-hidden="true" /></span>
+            Digitar código
+          </button>
         </div>
 
-        <div className="flex justify-around items-center pt-4">
-          <div className="flex flex-col items-center text-xs text-gray-300 gap-1">
-            <span className="p-3 bg-white/10 rounded-full"><Flashlight className="w-4 h-4" /></span> Lanterna
-          </div>
-          <div className="flex flex-col items-center text-xs text-gray-300 gap-1">
-            <span className="p-3 bg-white/10 rounded-full"><Keyboard className="w-4 h-4" /></span> Digitar código
-          </div>
-        </div>
-
-        <div className="text-center text-[10px] text-gray-400 pb-2">
-          SOL-2026-00984 · Bistrô da Serra
-        </div>
+        <p className="mt-auto pt-10 text-xs text-slate-400">SOL-2026-00984 · Bistrô da Serra</p>
       </div>
-    </div>
+    </CollectorShell>
   );
 }

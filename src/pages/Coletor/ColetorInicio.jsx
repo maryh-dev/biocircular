@@ -1,63 +1,66 @@
 import React from 'react';
-import { Home, Droplet, MapPin, ChevronRight, Navigation } from 'lucide-react';
+import { ChevronRight, MapPin, Navigation } from 'lucide-react';
+import CollectorShell from '../../components/CollectorShell';
+import { useNavigate } from '../../components/NavigationContext';
+
+const upcomingStops = [
+  ['11:30', 'Hotel Aurora', '320 L'],
+  ['13:00', 'Cantina Central', '140 L'],
+];
 
 export default function ColetorInicio() {
+  const navigate = useNavigate();
   return (
-    <div className="flex justify-center bg-gray-900 min-h-screen py-6">
-      {/* Moldura de Smartphone */}
-      <div className="w-[375px] bg-[#F5F7FA] min-h-[812px] rounded-[40px] shadow-2xl overflow-hidden flex flex-col justify-between relative border-8 border-gray-800">
-        
-        {/* Header */}
-        <div className="bg-white px-6 pt-12 pb-4 border-b border-[#D9E0E7] flex justify-between items-center">
-          <div>
-            <h1 className="text-xl font-bold text-[#17202A]">Início</h1>
-          </div>
-          <div className="w-9 h-9 bg-[#C58A32] text-[#0B1726] font-bold rounded-full flex items-center justify-center text-sm shadow-sm">
-            CA
-          </div>
-        </div>
+    <CollectorShell title="Início">
+      <div className="space-y-4">
+        <header>
+          <h2 className="text-2xl font-extrabold">Bom dia, Carlos</h2>
+          <p className="text-sm text-bioclube-textSub">Rota SP-08 · 27 de setembro</p>
+        </header>
 
-        {/* Corpo Scrollável */}
-        <div className="p-4 overflow-y-auto space-y-4 flex-1">
-          <div>
-            <h2 className="text-xl font-extrabold text-[#0B1726]">Bom dia, Carlos</h2>
-            <p className="text-xs text-[#667085]">Rota SP-08 · 27 de setembro</p>
+        <section className="grid grid-cols-2 gap-3" aria-label="Resumo da rota">
+          <div className="rounded-xl border border-bioclube-border bg-white p-4 shadow-sm">
+            <p className="text-2xl font-black">4</p>
+            <p className="mt-1 text-xs text-bioclube-textSub">coletas</p>
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="bg-white p-4 rounded-xl border border-[#D9E0E7] shadow-sm">
-              <span className="text-2xl font-black text-[#17202A]">4</span>
-              <p className="text-[11px] text-[#667085] mt-0.5">coletas</p>
-            </div>
-            <div className="bg-white p-4 rounded-xl border border-[#D9E0E7] shadow-sm">
-              <span className="text-2xl font-black text-[#0B1726]">730 L</span>
-              <p className="text-[11px] text-[#667085] mt-0.5">estimados</p>
-            </div>
+          <div className="rounded-xl border border-bioclube-border bg-white p-4 shadow-sm">
+            <p className="text-2xl font-black">730 L</p>
+            <p className="mt-1 text-xs text-bioclube-textSub">estimados</p>
           </div>
+        </section>
 
-          <div className="bg-white p-5 rounded-xl border border-[#D9E0E7] shadow-sm">
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-xs font-bold text-amber-700">10:00–11:00</span>
-              <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">Agendada</span>
-            </div>
-            <h3 className="text-base font-bold text-[#17202A]">Bistrô da Serra</h3>
-            <p className="text-xs text-[#667085] flex items-center gap-1 mt-1 mb-4">
-              <MapPin className="w-3.5 h-3.5 text-gray-400" /> Rua dos Pinheiros, 842 · São Paulo
-            </p>
-            <button className="w-full py-3 bg-[#0B1726] text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2">
-              <Navigation className="w-4 h-4" /> Iniciar rota
-            </button>
+        <article className="rounded-xl border border-bioclube-border bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs font-bold text-amber-700">10:00–11:00</span>
+            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">Agendada</span>
           </div>
-        </div>
+          <h3 className="mt-5 text-lg font-bold">Bistrô da Serra</h3>
+          <p className="mt-2 flex items-start gap-2 text-sm text-bioclube-textSub">
+            <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            Rua dos Pinheiros, 842 · São Paulo
+          </p>
+          <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
+            <div><dt className="text-xs uppercase text-bioclube-textSub">Estimativa</dt><dd>180 L</dd></div>
+            <div><dt className="text-xs uppercase text-bioclube-textSub">Recipiente</dt><dd>REC-00482</dd></div>
+          </dl>
+          <button type="button" onClick={() => navigate('coletor-qr')} className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-bioclube-dark px-4 py-3 text-sm font-bold text-white hover:bg-bioclube-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-bioclube-amber">
+            <Navigation className="h-4 w-4" aria-hidden="true" /> Iniciar rota
+          </button>
+        </article>
 
-        {/* Bottom Navbar Mobile */}
-        <div className="bg-white border-t border-[#D9E0E7] h-16 flex justify-around items-center px-4 text-xs font-medium text-[#667085]">
-          <div className="flex flex-col items-center text-[#0B1726]"><Home className="w-5 h-5 mb-0.5" /> Início</div>
-          <div className="flex flex-col items-center"><Droplet className="w-5 h-5 mb-0.5" /> Coletas</div>
-          <div className="flex flex-col items-center"><MapPin className="w-5 h-5 mb-0.5" /> Rota</div>
-        </div>
-
+        <section aria-labelledby="after-stop-title">
+          <h3 id="after-stop-title" className="text-xl font-bold">Depois desta</h3>
+          <div className="mt-3 space-y-2">
+            {upcomingStops.map(([time, name, volume]) => (
+              <button key={name} type="button" className="flex min-h-14 w-full items-center gap-3 rounded-lg border border-bioclube-border bg-white px-3 text-left hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-bioclube-amber">
+                <span className="text-sm font-bold text-amber-700">{time}</span>
+                <span className="flex-1"><strong className="block text-sm">{name}</strong><small className="text-xs text-bioclube-textSub">{volume}</small></span>
+                <ChevronRight className="h-4 w-4 text-bioclube-textSub" aria-hidden="true" />
+              </button>
+            ))}
+          </div>
+        </section>
       </div>
-    </div>
+    </CollectorShell>
   );
 }
