@@ -35,9 +35,9 @@ export default function OperationShell({ currentScreen, onNavigate, children }) 
   };
 
   return (
-    <div className="flex min-h-screen bg-bioclube-light text-bioclube-textMain">
+    <div className="flex min-h-screen overflow-x-hidden bg-bioclube-light text-bioclube-textMain">
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex flex-col bg-bioclube-dark px-3 py-5 text-white transition-all duration-200 lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex max-w-[calc(100vw-1rem)] flex-col overflow-y-auto bg-bioclube-dark px-3 py-5 text-white transition-all duration-200 lg:static lg:max-w-none lg:translate-x-0 ${
           collapsed ? 'w-20' : 'w-72'
         } ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
         aria-label="Navegação completa da operação"
@@ -69,7 +69,7 @@ export default function OperationShell({ currentScreen, onNavigate, children }) 
           </div>
         )}
 
-        <nav className="mt-6 space-y-1" aria-label="Módulos operacionais">
+        <nav className="mt-6 min-h-0 flex-1 space-y-1 overflow-y-auto pr-1" aria-label="Módulos operacionais">
           {navigation.map(([screen, label, Icon]) => (
             <button
               key={screen}
@@ -119,11 +119,11 @@ export default function OperationShell({ currentScreen, onNavigate, children }) 
         />
       )}
 
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 pt-14 lg:pt-0">
         <button
           type="button"
           onClick={() => setMobileOpen(true)}
-          className="fixed left-3 top-3 z-20 rounded bg-bioclube-dark p-2 text-white shadow lg:hidden"
+          className="fixed left-3 top-3 z-20 rounded-lg bg-bioclube-dark p-3 text-white shadow-lg lg:hidden"
           aria-label="Abrir menu da operação"
         >
           <Menu className="h-5 w-5" aria-hidden="true" />

@@ -6,10 +6,10 @@ export default function CollectorShell({ title, dark = false, children }) {
   const navigate = useNavigate();
 
   return (
-    <div className={`min-h-screen ${dark ? 'bg-bioclube-dark' : 'bg-bioclube-light'} font-sans`}>
+    <div className={`min-h-screen overflow-x-hidden ${dark ? 'bg-bioclube-dark' : 'bg-bioclube-light'} font-sans`}>
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col overflow-hidden bg-inherit shadow-xl">
         <header
-          className={`flex min-h-16 items-center justify-between border-b px-5 py-3 ${
+          className={`flex min-h-16 items-center justify-between gap-3 border-b px-4 py-3 sm:px-5 ${
             dark ? 'border-white/10 text-white' : 'border-bioclube-border bg-white text-bioclube-textMain'
           }`}
         >
@@ -21,13 +21,13 @@ export default function CollectorShell({ title, dark = false, children }) {
           >
             <span aria-hidden="true" className="text-xl">←</span>
           </button>
-          <h1 className="text-base font-bold">{title}</h1>
+          <h1 className="min-w-0 truncate text-base font-bold">{title}</h1>
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-bioclube-amber text-xs font-bold text-bioclube-dark">
             CA
           </span>
         </header>
 
-        <main className="flex-1 overflow-y-auto px-5 py-5">{children}</main>
+        <main className="min-w-0 flex-1 overflow-y-auto px-4 py-5 sm:px-5">{children}</main>
 
         {!dark && (
           <nav className="grid min-h-16 grid-cols-3 border-t border-bioclube-border bg-white px-3 py-2" aria-label="Navegação do coletor">

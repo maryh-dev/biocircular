@@ -15,6 +15,7 @@
     @apply bg-bioclube-light text-bioclube-textMain antialiased font-sans;
     margin: 0;
     min-width: 320px;
+    overflow-x: hidden;
   }
 
   h1,
@@ -56,13 +57,38 @@
 }
 
 @media (max-width: 640px) {
+  body {
+    font-size: 16px;
+  }
+
+  [class~="text-[9px]"] {
+    font-size: 0.75rem !important;
+    line-height: 1.35;
+  }
+
+  [class~="text-[10px]"] {
+    font-size: 0.8125rem !important;
+    line-height: 1.4;
+  }
+
+  [class~="text-[11px]"],
+  [class~="text-xs"] {
+    font-size: 0.875rem !important;
+    line-height: 1.45;
+  }
+
+  [class~="text-sm"] {
+    font-size: 1rem !important;
+    line-height: 1.5;
+  }
+
   h1[class*="text-"] {
-    font-size: clamp(1.75rem, 7vw, 2.25rem) !important;
+    font-size: clamp(1.5rem, 7vw, 2rem) !important;
     line-height: 1.15;
   }
 
   h2[class*="text-"] {
-    font-size: clamp(1.25rem, 5vw, 1.75rem) !important;
+    font-size: clamp(1.15rem, 5vw, 1.5rem) !important;
     line-height: 1.2;
   }
 

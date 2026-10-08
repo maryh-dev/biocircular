@@ -29,7 +29,7 @@ export default function AppShell({ currentScreen, onNavigate, children, chrome =
   }
 
   return (
-    <div className="flex min-h-screen bg-bioclube-light text-bioclube-textMain">
+    <div className="flex min-h-screen overflow-x-hidden bg-bioclube-light text-bioclube-textMain">
       <aside
         className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-bioclube-dark px-4 py-5 text-white transition-transform lg:static lg:translate-x-0 ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
