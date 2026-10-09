@@ -1,11 +1,18 @@
 import React from 'react';
 import { Search, Bell, Plus } from 'lucide-react';
-import { useNavigate } from '../../components/NavigationContext';
 
 export default function Lotes() {
-  const navigate = useNavigate();
   return (
-    <div className="min-h-screen bg-bioclube-light font-sans text-bioclube-textMain">
+    <div className="flex min-h-screen bg-bioclube-light font-sans text-bioclube-textMain">
+      <aside className="hidden lg:flex lg:w-64 flex-shrink-0 bg-bioclube-dark text-white flex-col justify-between p-6">
+        <div>
+          <div className="flex items-center gap-2 mb-10">
+            <span className="bg-bioclube-amber text-bioclube-dark font-bold px-2 py-0.5 rounded text-xs">BC</span>
+            <span className="font-bold tracking-wider text-sm">BIOCIRCULAR</span>
+          </div>
+        </div>
+      </aside>
+
       <main className="flex-1 flex flex-col">
         <header className="h-16 bg-white border-b border-bioclube-border px-4 md:px-8 flex items-center justify-between">
           <span className="text-xs text-bioclube-textSub">BIOCIRCULAR / <strong className="text-bioclube-textMain">Lotes</strong></span>
@@ -18,9 +25,7 @@ export default function Lotes() {
               <h1 className="text-xl md:text-2xl font-bold">Lotes</h1>
               <p className="text-xs text-bioclube-textSub mt-1">Consolide coletas e acompanhe transporte, recebimento e destinação.</p>
             </div>
-            <div className="flex gap-2">
-              <button type="button" onClick={() => navigate('op-recebimento')} className="flex items-center gap-2 bg-bioclube-dark text-white px-4 py-2.5 rounded-lg text-xs font-bold"><Plus className="w-4 h-4" /> Receber lote</button>
-            </div>
+            <button className="flex items-center gap-2 bg-bioclube-dark text-white px-4 py-2.5 rounded-lg text-xs font-bold"><Plus className="w-4 h-4" /> Criar lote</button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
