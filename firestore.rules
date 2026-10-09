@@ -1,0 +1,84 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Funções auxiliares ----------
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function profilePath() {
+      return /databases/$(database)/documents/users/$(request.auth.uid);
+    }
+
+    function hasRole(r) {
+      return signedIn() && exists(profilePath()) && get(profilePath()).data.role == r;
+    }
+
+    function isAdmin()       { return hasRole('admin'); }
+    function isStaff()       { return hasRole('admin') || hasRole('operador'); }
+    function isCollector()   { return hasRole('coletor'); }
+    function isGenerator()   { return hasRole('gerador'); }
+    function isDestination() { return hasRole('destino'); }
+    function isOperational() { return isStaff() || isCollector() || isDestination(); }
+
+    // ---------- Perfis ----------
+    // Qualquer pessoa logada pode criar o PRÓPRIO perfil, mas somente como "gerador".
+    // Para virar admin/operador/coletor/destino, o admin troca o campo "role".
+    match /users/{uid} {
+      allow get: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isAdmin()
+        || (signedIn()
+            && request.auth.uid == uid
+            && request.resource.data.role == 'gerador'
+            && request.resource.data.ativo == true);
+      allow update, delete: if isAdmin();
+    }
+
+    // ---------- Solicitações de coleta ----------
+    match /solicitacoes/{id} {
+      allow create: if isStaff()
+        || (isGenerator()
+            && request.resource.data.solicitanteUid == request.auth.uid
+            && request.resource.data.status == 'solicitada');
+      allow read: if isStaff()
+        || (isGenerator() && resource.data.solicitanteUid == request.auth.uid);
+      allow update, delete: if isStaff();
+    }
+
+    // ---------- Lotes ----------
+    match /lotes/{id} {
+      allow read: if isOperational();
+      allow create: if isStaff() || isCollector();
+      allow update: if isStaff() || isCollector() || isDestination();
+      allow delete: if isAdmin();
+    }
+
+    // ---------- Recebimentos ----------
+    match /recebimentos/{id} {
+      allow read: if isOperational();
+      allow create: if isStaff() || isCollector();
+      allow update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    // ---------- Destinações ----------
+    match /destinacoes/{id} {
+      allow read, create, update: if isStaff() || isDestination();
+      allow delete: if isAdmin();
+    }
+
+    // ---------- Histórico (só cria, nunca edita) ----------
+    match /movimentacoes/{id} {
+      allow read: if isOperational();
+      allow create: if isOperational();
+      allow update, delete: if false;
+    }
+
+    // ---------- Todo o resto fica bloqueado ----------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
