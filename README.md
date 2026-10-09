@@ -18,7 +18,7 @@ A aplicação está dividida por perfis de acesso para garantir que cada utiliza
 - **Coletor:** Registo de recolhas em campo com leitura de QR Code.
 - **Destino:** Recebimento de lotes e emissão de certificados.
 
----
+--
 
 ## 🧭 Como testar o protótipo
 
