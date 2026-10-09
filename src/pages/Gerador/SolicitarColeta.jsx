@@ -1,107 +1,129 @@
-import React from 'react';
-import { useNavigate } from '../../components/NavigationContext';
+import React, { useState } from 'react';
+import { Search, Bell, AlertCircle, ArrowRight } from 'lucide-react';
+import { criarSolicitacao } from '../../services/db.js';
 
-export default function SolicitarColeta() {
-  const navigate = useNavigate();
+const JANELAS = ['08:00–09:00', '09:00–10:00', '10:00–11:00', '11:00–12:00', '14:00–15:00', '15:00–16:00', '16:00–17:00'];
+
+export default function SolicitarColeta({ session, onNavigate }) {
+  const [dataPreferencial, setDataPreferencial] = useState('');
+  const [janela, setJanela] = useState(JANELAS[2]);
+  const [endereco, setEndereco] = useState('');
+  const [volumeLitros, setVolumeLitros] = useState('');
+  const [observacoes, setObservacoes] = useState('');
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState(null);
+  const nome = session?.profile?.nome || 'Gerador';
+  const sigla = nome.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase();
+
+  async function enviar(event) {
+    event.preventDefault();
+    setErro(null);
+    setEnviando(true);
+    try {
+      await criarSolicitacao(session.user, session.profile, { dataPreferencial, janela, endereco, volumeLitros, observacoes });
+      onNavigate?.('gerador-minhas');
+    } catch (e) {
+      console.error(e);
+      setErro(e?.code === 'permission-denied'
+        ? 'Sem permissão para criar solicitação. Só contas com perfil "gerador" ou da operação podem fazer isso.'
+        : 'Não foi possível enviar a solicitação. Tente novamente.');
+    } finally {
+      setEnviando(false);
+    }
+  }
+
   return (
-    <div className="w-full min-h-full bg-bioclube-light font-sans">
-      <main className="w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
-        <header className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-bioclube-textMain">Solicitar recolha</h1>
-          <p className="mt-1 text-sm sm:text-base text-bioclube-textSub">Informe o recipiente e escolha a melhor janela.</p>
+    <div className="flex min-h-screen bg-bioclube-light font-sans text-bioclube-textMain">
+      <aside className="hidden lg:flex lg:w-64 flex-shrink-0 bg-bioclube-dark text-white flex-col justify-between p-6">
+        <div>
+          <div className="flex items-center gap-2 mb-10">
+            <span className="bg-bioclube-amber text-bioclube-dark font-bold px-2 py-0.5 rounded text-xs">BC</span>
+            <span className="font-bold tracking-wider text-sm">BIOCIRCULAR</span>
+          </div>
+          <div className="bg-bioclube-secondary p-3 rounded-lg mb-6 border border-gray-800">
+            <div className="text-xs font-bold text-bioclube-amber">{sigla}</div>
+            <div className="text-sm font-bold">{nome}</div>
+            <div className="text-[10px] text-gray-400">Gerador</div>
+          </div>
+          <nav className="space-y-1">
+            <button type="button" onClick={() => onNavigate?.('gerador-dash')} className="flex items-center gap-3 px-3 py-2.5 text-gray-400 hover:text-white text-sm font-medium">Dashboard</button>
+            <button type="button" onClick={() => onNavigate?.('gerador-minhas')} className="flex items-center gap-3 px-3 py-2.5 bg-bioclube-secondary rounded-md text-sm font-medium border-l-4 border-bioclube-amber">Solicitações</button>
+          </nav>
+        </div>
+      </aside>
+
+      <main className="flex-1 flex flex-col">
+        <header className="h-16 bg-white border-b border-bioclube-border px-4 md:px-8 flex items-center justify-between">
+          <span className="text-xs text-bioclube-textSub">BIOCIRCULAR / <strong className="text-bioclube-textMain">Solicitações</strong></span>
+          <div className="flex items-center gap-4"><Search className="w-4 h-4 text-gray-400" /><Bell className="w-4 h-4 text-gray-400" /></div>
         </header>
 
-        <div className="rounded-xl border border-bioclube-border bg-white shadow-sm flex flex-col overflow-hidden mb-8">
-
-          <div className="border-b border-bioclube-border px-4 sm:px-8 py-4 sm:py-6 overflow-x-auto">
-            <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm font-medium min-w-max">
-              <div className="flex items-center gap-1.5 sm:gap-2 text-bioclube-dark">
-                <span className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full bg-bioclube-dark text-[10px] sm:text-xs text-white">1</span>
-                Recipiente
-              </div>
-              <div className="h-px w-8 sm:w-16 md:w-24 bg-bioclube-border"></div>
-              <div className="flex items-center gap-1.5 sm:gap-2 text-bioclube-dark">
-                <span className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full bg-bioclube-dark text-[10px] sm:text-xs text-white">2</span>
-                Data e janela
-              </div>
-              <div className="h-px w-8 sm:w-16 md:w-24 bg-bioclube-light border-t border-bioclube-border"></div>
-              <div className="flex items-center gap-1.5 sm:gap-2 text-bioclube-textSub">
-                <span className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full border border-bioclube-border text-[10px] sm:text-xs">3</span>
-                Revisão
-              </div>
-            </div>
+        <div className="p-4 md:p-8 space-y-6">
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold">Solicitar coleta</h1>
+            <p className="text-xs text-bioclube-textSub mt-1">Informe o recipiente e escolha a melhor janela para retirada.</p>
           </div>
 
-          <div className="flex flex-col lg:flex-row">
+          <form onSubmit={enviar} className="bg-white p-4 md:p-8 rounded-xl border border-bioclube-border shadow-sm grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-6">
+              <div className="flex items-center gap-4 border-b pb-4 text-xs font-semibold">
+                <span className="w-6 h-6 rounded-full bg-bioclube-dark text-white flex items-center justify-center">1</span> Recipiente
+                <span className="text-gray-300">——</span>
+                <span className="w-6 h-6 rounded-full bg-bioclube-amber text-bioclube-dark flex items-center justify-center">2</span> Data e janela
+                <span className="text-gray-300">——</span>
+                <span className="w-6 h-6 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center">3</span> Revisão
+              </div>
 
-            <div className="flex-1 p-4 sm:p-6 lg:p-8 order-2 lg:order-1">
-              <h2 className="mb-4 sm:mb-6 text-lg sm:text-xl font-bold text-bioclube-textMain">Data e janela de recolha</h2>
-
-              <form className="space-y-4 sm:space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                  <div className="flex flex-col">
-                    <label htmlFor="data" className="mb-1.5 block text-xs sm:text-sm font-medium text-bioclube-textMain">Data preferencial</label>
-                    <input id="data" type="date" defaultValue="2026-09-27" className="w-full rounded-lg border border-bioclube-border px-3 sm:px-4 py-3 sm:py-2.5 text-sm sm:text-base focus:border-bioclube-amber focus:ring-1 focus:ring-bioclube-amber focus:outline-none" />
-                  </div>
-                  <div className="flex flex-col">
-                    <label htmlFor="janela" className="mb-1.5 block text-xs sm:text-sm font-medium text-bioclube-textMain">Janela de horário</label>
-                    <select id="janela" className="w-full rounded-lg border border-bioclube-border px-3 sm:px-4 py-3 sm:py-2.5 text-sm sm:text-base focus:border-bioclube-amber focus:ring-1 focus:ring-bioclube-amber focus:outline-none bg-white">
-                      <option>10:00–11:00</option>
-                    </select>
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold mb-1">Data preferencial</label>
+                  <input type="date" required value={dataPreferencial} onChange={(e) => setDataPreferencial(e.target.value)} className="w-full p-3 border border-bioclube-border rounded-md text-sm" />
                 </div>
-
-                <div className="flex flex-col">
-                  <label htmlFor="end" className="mb-1.5 block text-xs sm:text-sm font-medium text-bioclube-textMain">Morada</label>
-                  <input id="end" type="text" readOnly defaultValue="Rua dos Pinheiros, 842 · SP" className="w-full rounded-lg border border-bioclube-border bg-bioclube-light px-3 sm:px-4 py-3 sm:py-2.5 text-sm sm:text-base text-bioclube-textSub cursor-not-allowed" />
+                <div>
+                  <label className="block text-xs font-semibold mb-1">Janela de horário</label>
+                  <select value={janela} onChange={(e) => setJanela(e.target.value)} className="w-full p-3 border border-bioclube-border rounded-md text-sm bg-white">
+                    {JANELAS.map((j) => <option key={j}>{j}</option>)}
+                  </select>
                 </div>
+              </div>
 
-                <div className="flex flex-col">
-                  <label htmlFor="obs" className="mb-1.5 block text-xs sm:text-sm font-medium text-bioclube-textMain">Observações para o coletor</label>
-                  <textarea id="obs" rows="2" placeholder="Ex.: acesso pela entrada lateral" className="w-full rounded-lg border border-bioclube-border px-3 sm:px-4 py-3 text-sm sm:text-base focus:border-bioclube-amber focus:ring-1 focus:ring-bioclube-amber focus:outline-none resize-none"></textarea>
-                </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1">Endereço</label>
+                <input type="text" required value={endereco} onChange={(e) => setEndereco(e.target.value)} placeholder="Rua, número, cidade" className="w-full p-3 border border-bioclube-border rounded-md text-sm" />
+              </div>
 
-                <div className="flex items-start gap-2 sm:gap-3 rounded-lg bg-blue-50 p-3 sm:p-4 text-xs sm:text-sm text-blue-800">
-                  <span aria-hidden="true" className="mt-0.5">ℹ️</span> A disponibilidade será confirmada pela operação.
-                </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1">Volume estimado (litros)</label>
+                <input type="number" min="1" required value={volumeLitros} onChange={(e) => setVolumeLitros(e.target.value)} placeholder="Ex.: 180" className="w-full p-3 border border-bioclube-border rounded-md text-sm" />
+              </div>
 
-                <div className="mt-6 sm:mt-8 flex flex-col-reverse sm:flex-row justify-between border-t border-bioclube-border pt-6 gap-3">
-                  <button type="button" onClick={() => navigate('gerador-dash')} className="w-full sm:w-auto rounded-lg border border-bioclube-border px-5 py-3 sm:py-2.5 text-sm sm:text-base font-medium text-bioclube-textMain hover:bg-bioclube-light transition-colors">Voltar</button>
-                  <button type="button" onClick={() => navigate('op-detalhes')} className="w-full sm:w-auto rounded-lg bg-bioclube-dark px-5 py-3 sm:py-2.5 text-sm sm:text-base font-medium text-white hover:bg-bioclube-secondary transition-colors">Revisar solicitação</button>
-                </div>
-              </form>
-            </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1">Observações para o coletor</label>
+                <input type="text" value={observacoes} onChange={(e) => setObservacoes(e.target.value)} placeholder="Ex.: acesso pela entrada lateral" className="w-full p-3 border border-bioclube-border rounded-md text-sm" />
+              </div>
 
-            <div className="w-full lg:w-96 border-b lg:border-b-0 lg:border-l border-bioclube-border bg-bioclube-light p-4 sm:p-6 lg:p-8 order-1 lg:order-2">
-              <div className="rounded-xl border border-bioclube-border bg-white p-4 sm:p-6 shadow-sm">
-                <h3 className="mb-4 sm:mb-6 text-base sm:text-lg font-bold text-bioclube-textMain">Resumo</h3>
+              <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg text-xs text-blue-900 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                <span>A disponibilidade final será confirmada pela operação.</span>
+              </div>
 
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 lg:grid-cols-1 gap-4 lg:gap-4">
-                    <div>
-                      <p className="text-[10px] sm:text-xs font-semibold uppercase text-bioclube-textSub">Gerador</p>
-                      <p className="text-sm sm:text-base font-medium text-bioclube-textMain break-words">Bistrô da Serra</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] sm:text-xs font-semibold uppercase text-bioclube-textSub">Recipiente</p>
-                      <p className="text-sm sm:text-base font-medium text-bioclube-textMain">REC-00482</p>
-                    </div>
-                  </div>
+              {erro && <p role="alert" className="text-sm rounded-md p-3 bg-red-50 text-red-700">{erro}</p>}
 
-                  <div className="pt-2 border-t border-bioclube-border lg:border-none">
-                    <div className="mb-1 flex justify-between text-xs sm:text-sm font-medium mt-2 lg:mt-0">
-                      <span className="text-bioclube-textSub">Ocupação (180/200L)</span>
-                      <span className="text-bioclube-textMain">90%</span>
-                    </div>
-                    <div className="h-2 sm:h-2.5 w-full rounded-full bg-bioclube-light overflow-hidden">
-                      <div className="h-full rounded-full bg-bioclube-amber w-[90%]"></div>
-                    </div>
-                  </div>
-                </div>
+              <div className="flex justify-between pt-4 border-t">
+                <button type="button" onClick={() => onNavigate?.('gerador-minhas')} className="px-5 py-2.5 border border-bioclube-border rounded-md text-xs font-bold">Voltar</button>
+                <button type="submit" disabled={enviando} className="px-6 py-2.5 bg-bioclube-dark text-white rounded-md text-xs font-bold flex items-center gap-2 disabled:opacity-60">{enviando ? 'Enviando…' : 'Enviar solicitação'} <ArrowRight className="w-4 h-4" /></button>
               </div>
             </div>
 
-          </div>
+            {/* Resumo Lateral */}
+            <div className="bg-gray-50 p-6 rounded-xl border border-bioclube-border space-y-4">
+              <h3 className="font-bold text-sm">Resumo</h3>
+              <div className="text-xs space-y-3">
+                <div><span className="text-bioclube-textSub block">GERADOR</span><strong>{nome}</strong></div>
+                <div><span className="text-bioclube-textSub block">VOLUME ESTIMADO</span><strong className="text-base text-bioclube-amber">{volumeLitros ? `${volumeLitros} L` : '—'}</strong></div>
+              </div>
+            </div>
+          </form>
         </div>
       </main>
     </div>
