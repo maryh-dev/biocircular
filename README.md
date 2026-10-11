@@ -23,7 +23,7 @@ A aplicação está dividida por perfis de acesso para garantir que cada utiliza
 ## 🧭 Como testar o protótipo
 
 Acesse o link do Vercel, disponível na página.
----
+--
 
 ## 📄 Licença
 
