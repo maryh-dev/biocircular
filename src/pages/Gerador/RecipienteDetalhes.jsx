@@ -1,7 +1,27 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Search, Bell, Download, Plus } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 
-export default function RecipienteDetalhes() {
+export default function RecipienteDetalhes({ onNavigate }) {
+  const qrRef = useRef(null);
+  const codigoRecipiente = 'REC-00482';
+
+  function baixarEtiqueta() {
+    const svg = qrRef.current?.querySelector('svg');
+    if (!svg) return;
+
+    const arquivo = new Blob(
+      [new XMLSerializer().serializeToString(svg)],
+      { type: 'image/svg+xml;charset=utf-8' }
+    );
+    const url = URL.createObjectURL(arquivo);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${codigoRecipiente}.svg`;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  }
+
   return (
     <div className="flex min-h-screen bg-bioclube-light font-sans text-bioclube-textMain">
       <aside className="hidden lg:flex lg:w-64 flex-shrink-0 bg-bioclube-dark text-white flex-col justify-between p-6">
@@ -11,7 +31,9 @@ export default function RecipienteDetalhes() {
             <span className="font-bold tracking-wider text-sm">BIOCIRCULAR</span>
           </div>
           <nav className="space-y-1">
-            <a href="#" className="flex items-center gap-3 px-3 py-2.5 bg-bioclube-secondary rounded-md text-sm font-medium border-l-4 border-bioclube-amber">Recipientes</a>
+            <button type="button" onClick={() => onNavigate?.('gerador-dash')} className="flex items-center gap-3 px-3 py-2.5 text-gray-400 hover:text-white text-sm font-medium">Dashboard</button>
+            <button type="button" onClick={() => onNavigate?.('gerador-minhas')} className="flex items-center gap-3 px-3 py-2.5 text-gray-400 hover:text-white text-sm font-medium">Solicitações</button>
+            <span aria-current="page" className="flex items-center gap-3 px-3 py-2.5 bg-bioclube-secondary rounded-md text-sm font-medium border-l-4 border-bioclube-amber">Recipientes</span>
           </nav>
         </div>
       </aside>
@@ -23,10 +45,10 @@ export default function RecipienteDetalhes() {
         </header>
 
         <div className="p-4 md:p-8 space-y-6">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h1 className="text-xl md:text-2xl font-bold">Recipiente REC-00482</h1>
-              <p className="text-xs text-bioclube-textSub mt-1">Identificação, capacidade e histórico de movimentações.</p>
+              <h1 className="text-xl md:text-2xl font-bold">Recipiente {codigoRecipiente}</h1>
+              <p className="text-xs text-bioclube-textSub mt-1">QR de demonstração para testar leitura e validação de coleta.</p>
             </div>
             <span className="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full">Ativo</span>
           </div>
@@ -34,18 +56,18 @@ export default function RecipienteDetalhes() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Bloco QR Code */}
             <div className="bg-white p-6 rounded-xl border border-bioclube-border shadow-sm flex flex-col items-center justify-center text-center">
-              <div className="w-48 h-48 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center mb-4">
-                <span className="text-xs text-gray-400">[ QR CODE REC-00482 ]</span>
+              <div ref={qrRef} className="mb-4 flex h-48 w-48 items-center justify-center rounded-lg border border-gray-200 bg-white p-3">
+                <QRCodeSVG value={codigoRecipiente} size={176} level="M" title={`QR Code do recipiente ${codigoRecipiente}`} />
               </div>
-              <h3 className="font-bold text-sm">REC-00482</h3>
-              <p className="text-[11px] text-bioclube-textSub mb-4">Bombona 200 L · Bistrô da Serra</p>
-              <button className="w-full py-2 border border-bioclube-border rounded-lg text-xs font-bold flex items-center justify-center gap-2">
-                <Download className="w-3.5 h-3.5" /> Baixar etiqueta
+              <h3 className="font-bold text-sm">{codigoRecipiente}</h3>
+              <p className="mb-4 text-[11px] text-bioclube-textSub">Código ilustrativo; use este valor ao criar uma solicitação de teste.</p>
+              <button type="button" onClick={baixarEtiqueta} className="flex w-full items-center justify-center gap-2 rounded-lg border border-bioclube-border py-2 text-xs font-bold">
+                <Download className="h-3.5 w-3.5" /> Baixar QR Code
               </button>
             </div>
 
             {/* Informações do Recipiente */}
-            <div className="col-span-2 space-y-6">
+            <div className="space-y-6 md:col-span-2">
               <div className="bg-white p-6 rounded-xl border border-bioclube-border shadow-sm space-y-4">
                 <h3 className="font-bold text-sm">Dados do recipiente</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">

@@ -1,65 +1,133 @@
-import React from 'react';
-import { Bell, Search, CheckCircle, AlertTriangle } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { AlertTriangle, CheckCircle, PackageCheck } from 'lucide-react';
+import { observarLotes, registrarRecebimento } from '../../services/db.js';
 
-export default function Recebimento() {
+export default function Recebimento({ session, onNavigate }) {
+  const [lotes, setLotes] = useState(null);
+  const [loteId, setLoteId] = useState('');
+  const [quantidade, setQuantidade] = useState('');
+  const [observacoes, setObservacoes] = useState('');
+  const [resultado, setResultado] = useState('conforme');
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState('');
+  const [aviso, setAviso] = useState('');
+
+  useEffect(() => observarLotes(
+    setLotes,
+    (error) => {
+      console.error('Não foi possível carregar lotes para recebimento:', error);
+      setErro('Não foi possível carregar os lotes. Confira as regras do Firestore.');
+    }
+  ), []);
+
+  const aguardando = useMemo(
+    () => (lotes || []).filter((lote) => lote.status === 'em_transporte'),
+    [lotes]
+  );
+  const selecionado = aguardando.find((lote) => lote.id === loteId);
+
+  useEffect(() => {
+    if (loteId && !aguardando.some((lote) => lote.id === loteId)) {
+      setLoteId('');
+      setQuantidade('');
+    }
+  }, [loteId, aguardando]);
+
+  async function enviar(event) {
+    event.preventDefault();
+    if (!loteId) {
+      setErro('Selecione um lote aguardando recebimento.');
+      return;
+    }
+
+    setErro('');
+    setAviso('');
+    setSalvando(true);
+    try {
+      await registrarRecebimento(session.user, {
+        loteId,
+        quantidadeLitros: quantidade,
+        resultado,
+        observacoes,
+      });
+      setLoteId('');
+      setQuantidade('');
+      setObservacoes('');
+      setResultado('conforme');
+      setAviso('Recebimento registrado; o lote foi atualizado.');
+    } catch (error) {
+      console.error('Não foi possível confirmar o recebimento:', error);
+      setErro(error.message || 'Não foi possível registrar o recebimento.');
+    } finally {
+      setSalvando(false);
+    }
+  }
+
   return (
-    <div className="flex min-h-screen bg-[#F5F7FA] font-sans text-[#17202A]">
-      {/* Sidebar Esquerda */}
-      <aside className="hidden lg:flex lg:w-64 flex-shrink-0 bg-[#0B1726] text-white flex-col justify-between p-6">
-        <div>
-          <div className="flex items-center gap-2 mb-10">
-            <span className="bg-[#C58A32] text-[#0B1726] font-bold px-2 py-0.5 rounded text-xs">BC</span>
-            <span className="font-bold tracking-wider text-sm">BIOCIRCULAR</span>
-          </div>
-          <div className="bg-[#16324F] p-3 rounded-lg mb-6 border border-gray-800">
-            <div className="text-xs font-bold text-[#C58A32]">DP</div>
-            <div className="text-sm font-bold">Destino Paulista</div>
-            <div className="text-[10px] text-gray-400">Destino</div>
-          </div>
-          <nav className="space-y-1">
-            <a href="#" className="flex items-center gap-3 px-3 py-2.5 text-gray-400 hover:text-white text-sm font-medium">Dashboard</a>
-            <a href="#" className="flex items-center gap-3 px-3 py-2.5 bg-[#16324F] rounded-md text-sm font-medium border-l-4 border-[#C58A32]">Recebimentos</a>
-          </nav>
-        </div>
-      </aside>
-
-      {/* Conteúdo Principal */}
-      <main className="flex-1 flex flex-col">
-        <header className="h-16 bg-white border-b border-[#D9E0E7] px-4 md:px-8 flex items-center justify-between">
-          <span className="text-xs text-[#667085]">BIOCIRCULAR / <strong className="text-[#17202A]">Recebimentos</strong></span>
-          <div className="flex items-center gap-4">
-            <Search className="w-4 h-4 text-gray-400 cursor-pointer" />
-            <Bell className="w-4 h-4 text-gray-400 cursor-pointer" />
-          </div>
+    <main className="min-h-screen bg-bioclube-light px-4 py-6 text-bioclube-textMain sm:px-6 sm:py-9 lg:px-10">
+      <div className="mx-auto max-w-3xl space-y-6">
+        <header>
+          <p className="text-xs font-bold uppercase tracking-wider text-amber-700">Central operacional</p>
+          <h1 className="mt-2 text-2xl font-extrabold text-bioclube-dark">Receber lote</h1>
+          <p className="mt-2 text-sm text-bioclube-textSub">Confira o volume recebido e registre qualquer divergência.</p>
         </header>
-
-        <div className="p-4 md:p-8 space-y-6">
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold">Receber lote</h1>
-            <p className="text-xs text-[#667085] mt-1">Confira identificação, transporte e quantidade física recebida.</p>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl border border-[#D9E0E7] shadow-sm space-y-6 max-w-2xl">
-            <div className="flex justify-between items-start border-b pb-4">
+        {erro && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{erro}</p>}
+        {aviso && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">{aviso}</p>}
+        <form onSubmit={enviar} className="space-y-5 rounded-2xl border border-bioclube-border bg-white p-5 shadow-sm sm:p-7">
+          {lotes === null ? (
+            <p className="text-sm text-bioclube-textSub">Carregando lotes…</p>
+          ) : aguardando.length === 0 ? (
+            <div className="rounded-xl bg-slate-50 p-5 text-center">
+              <PackageCheck className="mx-auto h-8 w-8 text-bioclube-textSub" />
+              <p className="mt-3 text-sm font-semibold">Nenhum lote aguardando recebimento</p>
+              <button type="button" onClick={() => onNavigate?.('op-lotes')} className="mt-3 text-sm font-bold text-amber-800 underline">Ver lotes</button>
+            </div>
+          ) : (
+            <>
               <div>
-                <h3 className="text-lg font-bold text-[#0B1726]">LOT-2026-00142</h3>
-                <p className="text-xs text-[#667085]">Rota SP-08 · Veículo ABC-4D28</p>
+                <label htmlFor="lote-recebimento" className="mb-2 block text-sm font-semibold">Lote a receber</label>
+                <select id="lote-recebimento" required value={loteId} onChange={(event) => {
+                  const id = event.target.value;
+                  setLoteId(id);
+                  const lote = aguardando.find((item) => item.id === id);
+                  setQuantidade(lote ? String(lote.volumeLitros || '') : '');
+                }} className="w-full rounded-lg border border-bioclube-border bg-white px-3 py-3 text-sm">
+                  <option value="">Selecione um lote</option>
+                  {aguardando.map((lote) => <option key={lote.id} value={lote.id}>{lote.codigo || lote.id} · {Number(lote.volumeLitros) || 0} L declarados</option>)}
+                </select>
               </div>
-              <span className="bg-blue-50 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">Em transporte</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg text-xs">
-              <div><span className="text-[#667085] block">QUANTIDADE DECLARADA</span><strong className="text-sm">1.240 L</strong></div>
-              <div><span className="text-[#667085] block">COLETAS</span><strong className="text-sm">4 recipientes</strong></div>
-              <div><span className="text-[#667085] block">MOTORISTA</span><strong className="text-sm">Carlos Almeida</strong></div>
-            </div>
-
-            <button className="w-full py-3 bg-[#0B1726] text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 hover:bg-[#16324F]">
-              <CheckCircle className="w-4 h-4" /> Confirmar recebimento
-            </button>
-          </div>
-        </div>
-      </main>
-    </div>
+              {selecionado && (
+                <div className="grid gap-3 rounded-xl bg-slate-50 p-4 text-sm sm:grid-cols-3">
+                  <div><span className="block text-xs text-bioclube-textSub">COLETAS</span><strong>{Number(selecionado.quantidadeColetas) || selecionado.solicitacaoIds?.length || 0}</strong></div>
+                  <div><span className="block text-xs text-bioclube-textSub">VOLUME DECLARADO</span><strong>{Number(selecionado.volumeLitros) || 0} L</strong></div>
+                  <div><span className="block text-xs text-bioclube-textSub">STATUS</span><strong>{selecionado.status}</strong></div>
+                </div>
+              )}
+              <div>
+                <label htmlFor="quantidade-recebida" className="mb-2 block text-sm font-semibold">Quantidade física recebida (litros)</label>
+                <input id="quantidade-recebida" type="number" min="0.01" step="0.01" required value={quantidade} onChange={(event) => setQuantidade(event.target.value)} className="w-full rounded-lg border border-bioclube-border px-3 py-3 text-sm" />
+              </div>
+              <div>
+                <label htmlFor="resultado-recebimento" className="mb-2 block text-sm font-semibold">Conferência</label>
+                <select id="resultado-recebimento" value={resultado} onChange={(event) => setResultado(event.target.value)} className="w-full rounded-lg border border-bioclube-border bg-white px-3 py-3 text-sm">
+                  <option value="conforme">Conforme</option>
+                  <option value="divergente">Com divergência</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="observacoes-recebimento" className="mb-2 block text-sm font-semibold">Observações</label>
+                <textarea id="observacoes-recebimento" rows="3" value={observacoes} onChange={(event) => setObservacoes(event.target.value)} className="w-full rounded-lg border border-bioclube-border px-3 py-3 text-sm" placeholder="Opcional" />
+              </div>
+              {resultado === 'divergente' && (
+                <p className="flex gap-2 rounded-lg bg-amber-50 p-3 text-xs leading-5 text-amber-900"><AlertTriangle className="h-4 w-4 shrink-0" />Registre a diferença de volume ou outra ocorrência nas observações.</p>
+              )}
+              <button type="submit" disabled={salvando} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-bioclube-dark px-4 py-3 text-sm font-bold text-white disabled:opacity-60">
+                <CheckCircle className="h-4 w-4" />{salvando ? 'Salvando recebimento…' : 'Confirmar recebimento'}
+              </button>
+            </>
+          )}
+        </form>
+      </div>
+    </main>
   );
 }

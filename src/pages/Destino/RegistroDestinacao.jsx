@@ -1,116 +1,133 @@
-import React from 'react';
-import { Search, Bell, CheckCircle2, ArrowRight } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { observarLotes, registrarDestinacao } from '../../services/db.js';
 
-export default function RegistroDestinacao() {
+export default function RegistroDestinacao({ session, onNavigate }) {
+  const [lotes, setLotes] = useState(null);
+  const [loteId, setLoteId] = useState('');
+  const [destinatario, setDestinatario] = useState('');
+  const [tipoDestino, setTipoDestino] = useState('');
+  const [quantidade, setQuantidade] = useState('');
+  const [observacoes, setObservacoes] = useState('');
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState('');
+  const [aviso, setAviso] = useState('');
+
+  useEffect(() => observarLotes(
+    setLotes,
+    (error) => {
+      console.error('Não foi possível carregar lotes para destinação:', error);
+      setErro('Não foi possível carregar lotes. Confira as regras do Firestore.');
+    }
+  ), []);
+
+  const recebidos = useMemo(
+    () => (lotes || []).filter((lote) => lote.status === 'recebido'),
+    [lotes]
+  );
+  const selecionado = recebidos.find((lote) => lote.id === loteId);
+
+  useEffect(() => {
+    if (loteId && !recebidos.some((lote) => lote.id === loteId)) {
+      setLoteId('');
+      setQuantidade('');
+    }
+  }, [loteId, recebidos]);
+
+  async function enviar(event) {
+    event.preventDefault();
+    if (!loteId) {
+      setErro('Selecione um lote recebido antes de registrar a destinação.');
+      return;
+    }
+
+    setErro('');
+    setAviso('');
+    setSalvando(true);
+    try {
+      await registrarDestinacao(session.user, {
+        loteId,
+        destinatario,
+        tipoDestino,
+        quantidadeLitros: quantidade,
+        observacoes,
+      });
+      setLoteId('');
+      setQuantidade('');
+      setObservacoes('');
+      setAviso('Destinação registrada; o ciclo do lote foi atualizado.');
+    } catch (error) {
+      console.error('Não foi possível registrar a destinação:', error);
+      setErro(error.message || 'Não foi possível registrar a destinação.');
+    } finally {
+      setSalvando(false);
+    }
+  }
+
   return (
-    <div className="flex min-h-screen bg-bioclube-light font-sans text-bioclube-textMain">
-      {/* Sidebar Esquerda */}
-      <aside className="hidden lg:flex lg:w-64 flex-shrink-0 bg-bioclube-dark text-white flex-col justify-between p-6">
-        <div>
-          <div className="flex items-center gap-2 mb-10">
-            <span className="bg-bioclube-amber text-bioclube-dark font-bold px-2 py-0.5 rounded text-xs">BC</span>
-            <span className="font-bold tracking-wider text-sm">BIOCIRCULAR</span>
-          </div>
-          <div className="bg-bioclube-secondary p-3 rounded-lg mb-6 border border-gray-800">
-            <div className="text-xs font-bold text-bioclube-amber">DP</div>
-            <div className="text-sm font-bold">Destino Paulista</div>
-            <div className="text-[10px] text-gray-400">Destino</div>
-          </div>
-          <nav className="space-y-1">
-            <a href="#" className="flex items-center gap-3 px-3 py-2.5 text-gray-400 hover:text-white text-sm font-medium">Dashboard</a>
-            <a href="#" className="flex items-center gap-3 px-3 py-2.5 text-gray-400 hover:text-white text-sm font-medium">Recebimentos</a>
-            <a href="#" className="flex items-center gap-3 px-3 py-2.5 bg-bioclube-secondary rounded-md text-sm font-medium border-l-4 border-bioclube-amber">Destinação</a>
-            <a href="#" className="flex items-center gap-3 px-3 py-2.5 text-gray-400 hover:text-white text-sm font-medium">Lotes</a>
-          </nav>
-        </div>
-      </aside>
-
-      {/* Conteúdo Principal */}
-      <main className="flex-1 flex flex-col">
-        {/* Header Superior */}
-        <header className="h-16 bg-white border-b border-bioclube-border px-4 md:px-8 flex items-center justify-between">
-          <span className="text-xs text-bioclube-textSub">BIOCIRCULAR / <strong className="text-bioclube-textMain">Destinação</strong></span>
-          <div className="flex items-center gap-4">
-            <Search className="w-4 h-4 text-gray-400 cursor-pointer" />
-            <Bell className="w-4 h-4 text-gray-400 cursor-pointer" />
-            <span className="text-xs font-medium text-gray-600 border-l pl-4">27 set 2026</span>
-          </div>
+    <main className="min-h-screen bg-bioclube-light px-4 py-6 text-bioclube-textMain sm:px-6 sm:py-9 lg:px-10">
+      <div className="mx-auto max-w-3xl space-y-6">
+        <header>
+          <p className="text-xs font-bold uppercase tracking-wider text-amber-700">Rastreabilidade</p>
+          <h1 className="mt-2 text-2xl font-extrabold text-bioclube-dark">Registrar destinação</h1>
+          <p className="mt-2 text-sm text-bioclube-textSub">Registre o destino final de um lote recebido.</p>
         </header>
-
-        {/* Corpo da Página */}
-        <div className="p-4 md:p-8 space-y-6">
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold">Registrar destinação</h1>
-            <p className="text-xs text-bioclube-textSub mt-1">Lote LOT-2026-00142 · 1.238 L recebidos</p>
-          </div>
-
-          <div className="bg-white p-4 md:p-8 rounded-xl border border-bioclube-border shadow-sm grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-6">
-              {/* Passos do Processo */}
-              <div className="flex items-center gap-4 border-b pb-4 text-xs font-semibold">
-                <span className="w-6 h-6 rounded-full bg-green-600 text-white flex items-center justify-center">✓</span> Recebimento confirmado
-                <span className="text-gray-300">——</span>
-                <span className="w-6 h-6 rounded-full bg-bioclube-amber text-bioclube-dark flex items-center justify-center">2</span> Dados da destinação
-                <span className="text-gray-300">——</span>
-                <span className="w-6 h-6 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center">3</span> Revisão
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold mb-1">Data da destinação</label>
-                  <input type="text" defaultValue="28/09/2026" className="w-full p-3 border border-bioclube-border rounded-md text-sm" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold mb-1">Quantidade destinada</label>
-                  <input type="text" defaultValue="1.238 L" className="w-full p-3 border border-bioclube-border rounded-md text-sm" />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold mb-1">Destino / unidade</label>
-                <input type="text" disabled defaultValue="Destino Paulista · Unidade Osasco" className="w-full p-3 border border-bioclube-border rounded-md text-sm bg-gray-50 text-gray-600" />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold mb-1">Registro operacional</label>
-                <input type="text" defaultValue="Processamento para insumo industrial" className="w-full p-3 border border-bioclube-border rounded-md text-sm" />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold mb-1">Responsável pelo registro</label>
-                <input type="text" defaultValue="Daniela Ramos" className="w-full p-3 border border-bioclube-border rounded-md text-sm" />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold mb-1">Observações</label>
-                <input type="text" placeholder="Opcional" className="w-full p-3 border border-bioclube-border rounded-md text-sm" />
-              </div>
-
-              <div className="flex justify-between pt-4 border-t">
-                <button className="px-5 py-2.5 border border-bioclube-border rounded-md text-xs font-bold hover:bg-gray-50">Voltar</button>
-                <button className="px-6 py-2.5 bg-bioclube-dark text-white rounded-md text-xs font-bold flex items-center gap-2 hover:bg-bioclube-secondary">
-                  Revisar registro <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
+        {erro && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{erro}</p>}
+        {aviso && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">{aviso}</p>}
+        <form onSubmit={enviar} className="space-y-5 rounded-2xl border border-bioclube-border bg-white p-5 shadow-sm sm:p-7">
+          {lotes === null ? (
+            <p className="text-sm text-bioclube-textSub">Carregando lotes…</p>
+          ) : recebidos.length === 0 ? (
+            <div className="rounded-xl bg-slate-50 p-5 text-center">
+              <p className="text-sm font-semibold">Nenhum lote recebido aguardando destinação</p>
+              <p className="mt-2 text-xs text-bioclube-textSub">A operação precisa registrar o recebimento antes desta etapa.</p>
             </div>
-
-            {/* Resumo Lateral */}
-            <div className="bg-gray-50 p-6 rounded-xl border border-bioclube-border space-y-4">
-              <h3 className="font-bold text-sm">Resumo</h3>
-              <div className="text-xs space-y-3">
-                <div><span className="text-bioclube-textSub block">LOTE</span><strong>LOT-2026-00142</strong></div>
-                <div><span className="text-bioclube-textSub block">QUANTIDADE RECEBIDA</span><strong className="text-base text-bioclube-amber">1.238 L</strong></div>
-                <div><span className="text-bioclube-textSub block">ORIGEM</span><strong>4 coletas · Rota SP-08</strong></div>
-                <div><span className="text-bioclube-textSub block">RECEBIDO EM</span><strong>27/09/2026 · 17:22</strong></div>
-                
-                <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg text-[11px] text-blue-900 mt-4">
-                  ⚠️ A confirmação encerra o ciclo de rastreabilidade do lote.
+          ) : (
+            <>
+              <div>
+                <label htmlFor="lote-destinacao" className="mb-2 block text-sm font-semibold">Lote recebido</label>
+                <select id="lote-destinacao" required value={loteId} onChange={(event) => {
+                  const id = event.target.value;
+                  setLoteId(id);
+                  const lote = recebidos.find((item) => item.id === id);
+                  setQuantidade(lote ? String(lote.quantidadeRecebidaLitros || lote.volumeLitros || '') : '');
+                }} className="w-full rounded-lg border border-bioclube-border bg-white px-3 py-3 text-sm">
+                  <option value="">Selecione um lote</option>
+                  {recebidos.map((lote) => <option key={lote.id} value={lote.id}>{lote.codigo || lote.id} · {Number(lote.quantidadeRecebidaLitros || lote.volumeLitros) || 0} L recebidos</option>)}
+                </select>
+              </div>
+              {selecionado && (
+                <div className="rounded-xl bg-slate-50 p-4 text-sm">
+                  <span className="block text-xs text-bioclube-textSub">VOLUME RECEBIDO</span>
+                  <strong>{Number(selecionado.quantidadeRecebidaLitros || selecionado.volumeLitros) || 0} L</strong>
+                </div>
+              )}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="destinatario" className="mb-2 block text-sm font-semibold">Destino / unidade</label>
+                  <input id="destinatario" required value={destinatario} onChange={(event) => setDestinatario(event.target.value)} placeholder="Ex.: Unidade Osasco" className="w-full rounded-lg border border-bioclube-border px-3 py-3 text-sm" />
+                </div>
+                <div>
+                  <label htmlFor="tipo-destino" className="mb-2 block text-sm font-semibold">Tipo de destinação</label>
+                  <input id="tipo-destino" required value={tipoDestino} onChange={(event) => setTipoDestino(event.target.value)} placeholder="Ex.: Insumo industrial" className="w-full rounded-lg border border-bioclube-border px-3 py-3 text-sm" />
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      </main>
-    </div>
+              <div>
+                <label htmlFor="quantidade-destinada" className="mb-2 block text-sm font-semibold">Quantidade destinada (litros)</label>
+                <input id="quantidade-destinada" type="number" min="0.01" step="0.01" max={selecionado?.quantidadeRecebidaLitros || selecionado?.volumeLitros || undefined} required value={quantidade} onChange={(event) => setQuantidade(event.target.value)} className="w-full rounded-lg border border-bioclube-border px-3 py-3 text-sm" />
+              </div>
+              <div>
+                <label htmlFor="observacoes-destinacao" className="mb-2 block text-sm font-semibold">Observações</label>
+                <textarea id="observacoes-destinacao" rows="3" value={observacoes} onChange={(event) => setObservacoes(event.target.value)} placeholder="Opcional" className="w-full rounded-lg border border-bioclube-border px-3 py-3 text-sm" />
+              </div>
+              <p className="flex gap-2 rounded-lg bg-amber-50 p-3 text-xs leading-5 text-amber-900"><AlertTriangle className="h-4 w-4 shrink-0" />Confirmar encerra o ciclo do lote. Confira destino e quantidade antes de salvar.</p>
+              <button type="submit" disabled={salvando} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-bioclube-dark px-4 py-3 text-sm font-bold text-white disabled:opacity-60">
+                <CheckCircle2 className="h-4 w-4" />{salvando ? 'Salvando destinação…' : 'Confirmar destinação'}
+              </button>
+            </>
+          )}
+        </form>
+      </div>
+    </main>
   );
 }

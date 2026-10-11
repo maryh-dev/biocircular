@@ -10,9 +10,14 @@
   },
   "dependencies": {
     "firebase": "^11.10.0",
+    "html5-qrcode": "^2.3.8",
+    "leaflet": "^1.9.4",
     "lucide-react": "^1.48.0",
+    "qrcode.react": "^4.2.0",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "react-leaflet": "^5.0.0",
+    "three": "^0.186.1"
   },
   "devDependencies": {
     "autoprefixer": "^10.6.1",

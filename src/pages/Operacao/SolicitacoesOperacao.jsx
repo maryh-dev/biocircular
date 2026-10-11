@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Search, Bell, FileText, Calendar, GitPullRequest, AlertCircle } from 'lucide-react';
-import { observarTodasSolicitacoes, mudarStatusSolicitacao, STATUS_SOLICITACAO } from '../../services/db.js';
+import { observarTodasSolicitacoes, mudarStatusSolicitacao, STATUS_SOLICITACAO, TRANSICOES_SOLICITACAO } from '../../services/db.js';
 import StatusBadge, { formatarData } from '../../components/StatusBadge.jsx';
 
 export default function SolicitacoesOperacao({ session }) {
@@ -19,9 +19,11 @@ export default function SolicitacoesOperacao({ session }) {
       await mudarStatusSolicitacao(session.user, solicitacao, novoStatus);
     } catch (e) {
       console.error(e);
-      setErro('Não foi possível atualizar o status.');
+      setErro(e?.message || 'Não foi possível atualizar o status.');
     }
   }
+
+  const opcoesStatus = (status) => (TRANSICOES_SOLICITACAO[status] || [status]).filter((valor) => valor !== status);
 
   return (
     <div className="flex min-h-screen bg-bioclube-light font-sans text-bioclube-textMain">
@@ -37,7 +39,7 @@ export default function SolicitacoesOperacao({ session }) {
             <div className="text-[10px] text-gray-400">Operação</div>
           </div>
           <nav className="space-y-1">
-            <button type="button" className="flex items-center gap-3 px-3 py-2.5 bg-bioclube-secondary rounded-md text-sm font-medium border-l-4 border-bioclube-amber">Solicitações</button>
+            <span aria-current="page" className="flex items-center gap-3 px-3 py-2.5 bg-bioclube-secondary rounded-md text-sm font-medium border-l-4 border-bioclube-amber">Solicitações</span>
           </nav>
         </div>
       </aside>
@@ -80,7 +82,49 @@ export default function SolicitacoesOperacao({ session }) {
           {erro && <p role="alert" className="text-sm rounded-md p-3 bg-red-50 text-red-700">{erro}</p>}
 
           <div className="bg-white rounded-xl border border-bioclube-border shadow-sm p-4 md:p-6">
-            <div className="overflow-x-auto">
+            <div className="space-y-3 xl:hidden">
+              {lista === null && !erro && <p className="py-6 text-center text-sm text-gray-500">Carregando…</p>}
+              {lista !== null && lista.length === 0 && <p className="py-6 text-center text-sm text-gray-500">Nenhuma solicitação cadastrada ainda.</p>}
+              {(lista || []).map((solicitacao) => (
+                <article key={solicitacao.id} className="space-y-3 rounded-xl border border-bioclube-border p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <strong className="font-mono text-sm">SOL-{solicitacao.id.slice(0, 6).toUpperCase()}</strong>
+                    <StatusBadge status={solicitacao.status} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="break-words text-sm font-semibold">{solicitacao.solicitanteNome || 'Gerador'}</p>
+                    <p className="mt-1 break-words text-xs text-bioclube-textSub">{solicitacao.endereco}</p>
+                  </div>
+                  <dl className="grid grid-cols-2 gap-3 border-t border-bioclube-border pt-3 text-xs">
+                    <div>
+                      <dt className="text-bioclube-textSub">VOLUME</dt>
+                      <dd className="mt-1 font-semibold">{solicitacao.volumeLitros} L</dd>
+                    </div>
+                    <div>
+                      <dt className="text-bioclube-textSub">DATA</dt>
+                      <dd className="mt-1 font-semibold">{formatarData(solicitacao.dataPreferencial)} · {solicitacao.janela?.split('–')[0]}</dd>
+                    </div>
+                  </dl>
+                  <label className="block text-xs font-semibold">
+                    Alterar status
+                    <select
+                      value={solicitacao.status}
+                      disabled={!opcoesStatus(solicitacao.status).length}
+                      onChange={(event) => trocarStatus(solicitacao, event.target.value)}
+                      aria-label={`Status de ${solicitacao.id}`}
+                      className="mt-1.5 w-full rounded-lg border border-bioclube-border bg-white px-3 py-2.5 text-sm disabled:cursor-not-allowed disabled:bg-slate-100"
+                    >
+                      <option value={solicitacao.status}>{STATUS_SOLICITACAO[solicitacao.status] || solicitacao.status}</option>
+                      {opcoesStatus(solicitacao.status).map((valor) => (
+                        <option key={valor} value={valor}>{STATUS_SOLICITACAO[valor] || valor}</option>
+                      ))}
+                    </select>
+                  </label>
+                </article>
+              ))}
+            </div>
+
+            <div className="hidden overflow-x-auto xl:block">
               <table className="min-w-[760px] w-full text-left text-xs">
               <thead>
                 <tr className="border-b text-bioclube-textSub pb-2">
@@ -103,8 +147,17 @@ export default function SolicitacoesOperacao({ session }) {
                     <td className="py-4">{formatarData(s.dataPreferencial)} · {s.janela?.split('–')[0]}</td>
                     <td className="py-4"><StatusBadge status={s.status} /></td>
                     <td className="py-4 text-right">
-                      <select value={s.status} onChange={(e) => trocarStatus(s, e.target.value)} className="border border-bioclube-border rounded-md p-1.5 text-xs bg-white">
-                        {Object.entries(STATUS_SOLICITACAO).map(([valor, rotulo]) => <option key={valor} value={valor}>{rotulo}</option>)}
+                      <select
+                        value={s.status}
+                        disabled={!opcoesStatus(s.status).length}
+                        onChange={(e) => trocarStatus(s, e.target.value)}
+                        aria-label={`Status de ${s.id}`}
+                        className="border border-bioclube-border rounded-md p-1.5 text-xs bg-white disabled:cursor-not-allowed disabled:bg-slate-100"
+                      >
+                        <option value={s.status}>{STATUS_SOLICITACAO[s.status] || s.status}</option>
+                        {opcoesStatus(s.status).map((valor) => (
+                          <option key={valor} value={valor}>{STATUS_SOLICITACAO[valor] || valor}</option>
+                        ))}
                       </select>
                     </td>
                   </tr>

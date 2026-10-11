@@ -1,92 +1,101 @@
-import React from 'react';
-import { Search, Bell, Plus, FileText, Package, Calendar, Droplet } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Calendar, CheckCircle2, Droplet, FileText, Package, Plus } from 'lucide-react';
+import { observarMinhasSolicitacoes, STATUS_SOLICITACAO } from '../../services/db.js';
 
-export default function DashboardGerador() {
+function exibirData(valor) {
+  if (!valor) return 'Data não definida';
+  const data = new Date(`${valor}T00:00:00`);
+  return Number.isNaN(data.getTime())
+    ? 'Data não definida'
+    : new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short' }).format(data);
+}
+
+export default function DashboardGerador({ session, onNavigate }) {
+  const [solicitacoes, setSolicitacoes] = useState(null);
+  const [erro, setErro] = useState('');
+  const nome = session?.profile?.nome || session?.user?.email || 'Gerador';
+  const ativas = useMemo(
+    () => (solicitacoes || []).filter((item) => !['concluida', 'cancelada'].includes(item.status)),
+    [solicitacoes]
+  );
+  const concluidas = useMemo(
+    () => (solicitacoes || []).filter((item) => ['coletada', 'concluida'].includes(item.status)),
+    [solicitacoes]
+  );
+  const volumeColetado = concluidas.reduce((total, item) => total + (Number(item.volumeColetadoLitros) || 0), 0);
+  const proxima = ativas
+    .filter((item) => item.dataPreferencial)
+    .sort((a, b) => a.dataPreferencial.localeCompare(b.dataPreferencial))[0];
+
+  useEffect(() => observarMinhasSolicitacoes(
+    session.user.uid,
+    setSolicitacoes,
+    (error) => {
+      console.error('Não foi possível carregar os indicadores do gerador:', error);
+      setErro('Não foi possível carregar seus dados. Confira as regras do Firestore.');
+    }
+  ), [session.user.uid]);
+
+  const indicadores = [
+    { icone: Droplet, valor: `${volumeColetado.toLocaleString('pt-BR')} L`, rotulo: 'Volume coletado' },
+    { icone: FileText, valor: solicitacoes === null ? '…' : concluidas.length, rotulo: 'Coletas concluídas' },
+    { icone: Calendar, valor: exibirData(proxima?.dataPreferencial), rotulo: 'Próxima coleta' },
+    { icone: Package, valor: ativas.length, rotulo: 'Solicitações ativas' },
+  ];
+
   return (
-    <div className="flex min-h-screen bg-bioclube-light font-sans text-bioclube-textMain">
-      {/* Sidebar Esquerda */}
-      <aside className="hidden lg:flex lg:w-64 flex-shrink-0 bg-bioclube-dark text-white flex-col justify-between p-6">
-        <div>
-          <div className="flex items-center gap-2 mb-10">
-            <span className="bg-bioclube-amber text-bioclube-dark font-bold px-2 py-0.5 rounded text-xs">BC</span>
-            <span className="font-bold tracking-wider text-sm">BIOCIRCULAR</span>
+    <main className="min-h-screen bg-bioclube-light px-4 py-6 text-bioclube-textMain sm:px-6 sm:py-9 lg:px-10">
+      <div className="mx-auto max-w-6xl space-y-7">
+        <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-amber-700">Área do gerador</p>
+            <h1 className="mt-2 text-2xl font-extrabold text-bioclube-dark">Olá, {nome.split(/\s+/)[0]}</h1>
+            <p className="mt-2 text-sm text-bioclube-textSub">Acompanhe as solicitações e o volume realmente coletado.</p>
           </div>
-
-          <div className="bg-bioclube-secondary p-3 rounded-lg mb-6 border border-gray-800">
-            <div className="text-xs font-bold text-bioclube-amber">BS</div>
-            <div className="text-sm font-bold">Bistrô da Serra</div>
-            <div className="text-[10px] text-gray-400">Gerador</div>
-          </div>
-
-          <nav className="space-y-1">
-            <a href="#" className="flex items-center gap-3 px-3 py-2.5 bg-bioclube-secondary rounded-md text-sm font-medium border-l-4 border-bioclube-amber">Dashboard</a>
-            <a href="#" className="flex items-center gap-3 px-3 py-2.5 text-gray-400 hover:text-white text-sm font-medium">Solicitações</a>
-            <a href="#" className="flex items-center gap-3 px-3 py-2.5 text-gray-400 hover:text-white text-sm font-medium">Recipientes</a>
-            <a href="#" className="flex items-center gap-3 px-3 py-2.5 text-gray-400 hover:text-white text-sm font-medium">Histórico</a>
-          </nav>
-        </div>
-
-        <div className="bg-bioclube-secondary/50 p-4 rounded-lg border border-gray-800/50">
-          <p className="text-xs font-bold text-gray-300">Precisa de ajuda?</p>
-          <p className="text-[11px] text-gray-400 mt-1">Consulte o suporte operacional.</p>
-        </div>
-      </aside>
-
-      {/* Conteúdo Principal */}
-      <main className="flex-1 flex flex-col">
-        {/* Header Superior */}
-        <header className="h-16 bg-white border-b border-bioclube-border px-4 md:px-8 flex items-center justify-between">
-          <span className="text-xs text-bioclube-textSub">BIOCIRCULAR / <strong className="text-bioclube-textMain">Dashboard</strong></span>
-          <div className="flex items-center gap-4">
-            <Search className="w-4 h-4 text-gray-400 cursor-pointer" />
-            <Bell className="w-4 h-4 text-gray-400 cursor-pointer" />
-            <span className="text-xs font-medium text-gray-600 border-l pl-4">27 set 2026</span>
-          </div>
-        </header>
-
-        {/* Corpo do Dashboard */}
-        <div className="p-4 md:p-8 space-y-8">
-          <div className="flex justify-between items-center">
+          <button type="button" onClick={() => onNavigate?.('gerador-solicitar')} className="inline-flex items-center justify-center gap-2 rounded-lg bg-bioclube-dark px-4 py-3 text-sm font-bold text-white hover:bg-bioclube-secondary">
+            <Plus className="h-4 w-4" /> Solicitar coleta
+          </button>
+        </section>
+        {erro && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{erro}</p>}
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {indicadores.map(({ icone: Icon, valor, rotulo }) => (
+            <article key={rotulo} className="rounded-2xl border border-bioclube-border bg-white p-5 shadow-sm">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-700"><Icon className="h-5 w-5" /></span>
+              <p className="mt-5 text-2xl font-extrabold">{valor}</p>
+              <p className="mt-1 text-xs text-bioclube-textSub">{rotulo}</p>
+            </article>
+          ))}
+        </section>
+        <section className="rounded-2xl border border-bioclube-border bg-white p-5 shadow-sm sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h1 className="text-xl md:text-2xl font-bold">Olá, Bistrô da Serra</h1>
-              <p className="text-xs text-bioclube-textSub mt-1">Acompanhe seus recipientes, solicitações e histórico de coleta.</p>
+              <h2 className="font-bold">Solicitações recentes</h2>
+              <p className="mt-1 text-xs text-bioclube-textSub">O status é atualizado pela operação e pelo coletor.</p>
             </div>
-            <button className="flex items-center gap-2 bg-bioclube-dark text-white px-4 py-2.5 rounded-lg text-xs font-bold hover:bg-bioclube-secondary">
-              <Plus className="w-4 h-4" /> Solicitar coleta
-            </button>
+            <button type="button" onClick={() => onNavigate?.('gerador-minhas')} className="text-sm font-bold text-amber-800 underline">Ver todas</button>
           </div>
-
-          {/* 4 Cards de Indicadores */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white p-5 rounded-xl border border-bioclube-border shadow-sm">
-              <div className="flex justify-between items-start mb-3">
-                <span className="p-2 bg-amber-50 text-bioclube-amber rounded-lg"><Droplet className="w-4 h-4" /></span>
-                <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">+18%</span>
+          {solicitacoes === null ? <p className="py-8 text-center text-sm text-bioclube-textSub">Carregando solicitações…</p>
+            : solicitacoes.length === 0 ? (
+              <div className="py-8 text-center">
+                <CheckCircle2 className="mx-auto h-8 w-8 text-bioclube-textSub" />
+                <p className="mt-3 text-sm text-bioclube-textSub">Você ainda não tem solicitações.</p>
+                <button type="button" onClick={() => onNavigate?.('gerador-solicitar')} className="mt-3 text-sm font-bold text-amber-800 underline">Criar primeira solicitação</button>
               </div>
-              <div className="text-2xl font-extrabold">2.840 L</div>
-              <div className="text-[11px] text-bioclube-textSub mt-1">Volume destinado em 2026</div>
-            </div>
-
-            <div className="bg-white p-5 rounded-xl border border-bioclube-border shadow-sm">
-              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg w-fit mb-3"><FileText className="w-4 h-4" /></div>
-              <div className="text-2xl font-extrabold">18</div>
-              <div className="text-[11px] text-bioclube-textSub mt-1">Coletas concluídas</div>
-            </div>
-
-            <div className="bg-white p-5 rounded-xl border border-bioclube-border shadow-sm">
-              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg w-fit mb-3"><Calendar className="w-4 h-4" /></div>
-              <div className="text-2xl font-extrabold">27 set</div>
-              <div className="text-[11px] text-bioclube-textSub mt-1">Próxima coleta</div>
-            </div>
-
-            <div className="bg-white p-5 rounded-xl border border-bioclube-border shadow-sm">
-              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg w-fit mb-3"><Package className="w-4 h-4" /></div>
-              <div className="text-2xl font-extrabold">2</div>
-              <div className="text-[11px] text-bioclube-textSub mt-1">Recipientes ativos</div>
-            </div>
-          </div>
-        </div>
-      </main>
-    </div>
+            ) : (
+              <ul className="mt-4 divide-y divide-bioclube-border">
+                {solicitacoes.slice(0, 5).map((item) => (
+                  <li key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-4">
+                    <div className="min-w-0">
+                      <strong className="block truncate text-sm">{item.endereco}</strong>
+                      <span className="mt-1 block text-xs text-bioclube-textSub">{exibirData(item.dataPreferencial)} · {item.janela || 'Horário não definido'} · {item.recipienteCodigo || 'Sem recipiente'}</span>
+                    </div>
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold">{STATUS_SOLICITACAO[item.status] || item.status}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+        </section>
+      </div>
+    </main>
   );
 }

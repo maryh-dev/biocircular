@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Search, Bell, AlertCircle, ArrowRight } from 'lucide-react';
+import { AlertCircle, ArrowRight, Bell, LocateFixed, Search } from 'lucide-react';
 import { criarSolicitacao } from '../../services/db.js';
+import MapPicker from '../../components/MapPicker.jsx';
 
 const JANELAS = ['08:00–09:00', '09:00–10:00', '10:00–11:00', '11:00–12:00', '14:00–15:00', '15:00–16:00', '16:00–17:00'];
 
@@ -8,6 +9,10 @@ export default function SolicitarColeta({ session, onNavigate }) {
   const [dataPreferencial, setDataPreferencial] = useState('');
   const [janela, setJanela] = useState(JANELAS[2]);
   const [endereco, setEndereco] = useState('');
+  const [recipienteCodigo, setRecipienteCodigo] = useState('');
+  const [coordenadas, setCoordenadas] = useState(null);
+  const [centroMapa, setCentroMapa] = useState([-23.5505, -46.6333]);
+  const [localizando, setLocalizando] = useState(false);
   const [volumeLitros, setVolumeLitros] = useState('');
   const [observacoes, setObservacoes] = useState('');
   const [enviando, setEnviando] = useState(false);
@@ -15,17 +20,60 @@ export default function SolicitarColeta({ session, onNavigate }) {
   const nome = session?.profile?.nome || 'Gerador';
   const sigla = nome.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase();
 
+  function usarLocalizacaoAtual() {
+    if (!navigator.geolocation) {
+      setErro('Este navegador não oferece geolocalização. Marque o ponto de coleta no mapa.');
+      return;
+    }
+
+    setErro(null);
+    setLocalizando(true);
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        const local = [coords.latitude, coords.longitude];
+        setCoordenadas(local);
+        setCentroMapa(local);
+        setLocalizando(false);
+      },
+      (error) => {
+        console.error('Não foi possível obter a localização:', error);
+        setErro(error.code === error.PERMISSION_DENIED
+          ? 'Permita a localização no navegador ou marque o endereço diretamente no mapa.'
+          : 'Não foi possível obter sua localização. Marque o endereço diretamente no mapa.');
+        setLocalizando(false);
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+    );
+  }
+
   async function enviar(event) {
     event.preventDefault();
     setErro(null);
+
+    if (!coordenadas) {
+      setErro('Marque o ponto exato da coleta no mapa antes de enviar.');
+      return;
+    }
+
     setEnviando(true);
     try {
-      await criarSolicitacao(session.user, session.profile, { dataPreferencial, janela, endereco, volumeLitros, observacoes });
+      await criarSolicitacao(session.user, session.profile, {
+        dataPreferencial,
+        janela,
+        endereco,
+        recipienteCodigo: recipienteCodigo.trim().toUpperCase(),
+        latitude: coordenadas[0],
+        longitude: coordenadas[1],
+        volumeLitros,
+        observacoes,
+      });
       onNavigate?.('gerador-minhas');
     } catch (e) {
       console.error(e);
       setErro(e?.code === 'permission-denied'
-        ? 'Sem permissão para criar solicitação. Só contas com perfil "gerador" ou da operação podem fazer isso.'
+        ? 'O Firestore recusou a solicitação. Confirme que o perfil está como "gerador" e publique as regras atuais de firestore.rules.'
+        : e?.code === 'unavailable' || e?.code === 'network-request-failed'
+        ? 'Sem conexão com o Firestore. Confira sua internet e tente novamente.'
         : 'Não foi possível enviar a solicitação. Tente novamente.');
     } finally {
       setEnviando(false);
@@ -66,7 +114,7 @@ export default function SolicitarColeta({ session, onNavigate }) {
 
           <form onSubmit={enviar} className="bg-white p-4 md:p-8 rounded-xl border border-bioclube-border shadow-sm grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-6">
-              <div className="flex items-center gap-4 border-b pb-4 text-xs font-semibold">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b pb-4 text-xs font-semibold">
                 <span className="w-6 h-6 rounded-full bg-bioclube-dark text-white flex items-center justify-center">1</span> Recipiente
                 <span className="text-gray-300">——</span>
                 <span className="w-6 h-6 rounded-full bg-bioclube-amber text-bioclube-dark flex items-center justify-center">2</span> Data e janela
@@ -90,6 +138,54 @@ export default function SolicitarColeta({ session, onNavigate }) {
               <div>
                 <label className="block text-xs font-semibold mb-1">Endereço</label>
                 <input type="text" required value={endereco} onChange={(e) => setEndereco(e.target.value)} placeholder="Rua, número, cidade" className="w-full p-3 border border-bioclube-border rounded-md text-sm" />
+              </div>
+
+              <div>
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <span className="block text-xs font-semibold">Ponto de coleta no mapa</span>
+                    <p className="mt-1 text-[11px] text-bioclube-textSub">Use sua localização como referência ou arraste o marcador até o endereço.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={usarLocalizacaoAtual}
+                    disabled={localizando}
+                    className="inline-flex items-center gap-2 rounded-lg border border-bioclube-border px-3 py-2 text-xs font-semibold text-bioclube-dark transition hover:bg-slate-50 disabled:opacity-60"
+                  >
+                    <LocateFixed aria-hidden="true" className="h-4 w-4" />
+                    {localizando ? 'Localizando…' : 'Usar minha localização'}
+                  </button>
+                </div>
+                <MapPicker
+                  center={centroMapa}
+                  position={coordenadas}
+                  onPositionChange={setCoordenadas}
+                  className="h-64"
+                />
+                {coordenadas ? (
+                  <p id="ponto-coleta" className="mt-2 text-[11px] text-bioclube-textSub">
+                    Ponto selecionado: {coordenadas[0].toFixed(5)}, {coordenadas[1].toFixed(5)}
+                  </p>
+                ) : (
+                  <p id="ponto-coleta" className="mt-2 text-[11px] font-medium text-amber-800">
+                    Clique no mapa para marcar o ponto. Sem o marcador, não será possível incluir a coleta numa rota.
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="codigo-recipiente" className="mb-1 block text-xs font-semibold">Código do recipiente</label>
+                <input
+                  id="codigo-recipiente"
+                  type="text"
+                  required
+                  value={recipienteCodigo}
+                  onChange={(event) => setRecipienteCodigo(event.target.value.toUpperCase())}
+                  placeholder="Ex.: REC-00482"
+                  pattern="REC-[A-Z0-9-]+"
+                  title="Use o código impresso no QR Code, por exemplo REC-00482."
+                  className="w-full rounded-md border border-bioclube-border p-3 text-sm uppercase"
+                />
               </div>
 
               <div>

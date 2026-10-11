@@ -12,28 +12,46 @@ service cloud.firestore {
     }
 
     function hasRole(r) {
-      return signedIn() && exists(profilePath()) && get(profilePath()).data.role == r;
+      return signedIn()
+        && exists(profilePath())
+        && get(profilePath()).data.ativo == true
+        && get(profilePath()).data.role == r;
     }
 
     function isAdmin()       { return hasRole('admin'); }
-    function isStaff()       { return hasRole('admin') || hasRole('operador'); }
+    function isStaff()       { return hasRole('operador'); }
     function isCollector()   { return hasRole('coletor'); }
     function isGenerator()   { return hasRole('gerador'); }
     function isDestination() { return hasRole('destino'); }
     function isOperational() { return isStaff() || isCollector() || isDestination(); }
 
     // ---------- Perfis ----------
-    // Qualquer pessoa logada pode criar o PRÓPRIO perfil, mas somente como "gerador".
-    // Para virar admin/operador/coletor/destino, o admin troca o campo "role".
+    // Admins gerenciam funções e acesso; cada pessoa só cria o próprio perfil inicial.
     match /users/{uid} {
       allow get: if signedIn() && (request.auth.uid == uid || isAdmin());
-      allow list: if isAdmin();
-      allow create: if isAdmin()
-        || (signedIn()
-            && request.auth.uid == uid
-            && request.resource.data.role == 'gerador'
-            && request.resource.data.ativo == true);
-      allow update, delete: if isAdmin();
+      allow list: if isAdmin()
+        || (isStaff() && resource.data.role == 'coletor' && resource.data.ativo == true);
+      allow create: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['nome', 'email', 'telefone', 'role', 'ativo', 'createdAt'])
+        && request.resource.data.keys().hasAll(['nome', 'email', 'telefone', 'role', 'ativo', 'createdAt'])
+        && request.resource.data.nome is string
+        && request.resource.data.nome.size() <= 120
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.telefone is string
+        && request.resource.data.telefone.matches('^(?:\\+?55\\s?)?(?:\\(?\\d{2}\\)?\\s?\\d{4,5}-?\\d{4})$')
+        && request.resource.data.role == 'gerador'
+        && request.resource.data.ativo == false
+        && request.resource.data.createdAt == request.time;
+      allow update: if isAdmin()
+        && request.auth.uid != uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role', 'ativo'])
+        && request.resource.data.role in ['admin', 'operador', 'gerador', 'coletor', 'destino']
+        && request.resource.data.ativo is bool
+        && (request.resource.data.role != 'admin' || request.resource.data.ativo == true)
+        && (resource.data.role != 'admin'
+          || (request.resource.data.role == 'admin' && request.resource.data.ativo == true));
+      allow delete: if false;
     }
 
     // ---------- Solicitações de coleta ----------
@@ -41,10 +59,32 @@ service cloud.firestore {
       allow create: if isStaff()
         || (isGenerator()
             && request.resource.data.solicitanteUid == request.auth.uid
-            && request.resource.data.status == 'solicitada');
+            && request.resource.data.status == 'solicitada'
+            && request.resource.data.latitude is number
+            && request.resource.data.latitude >= -90
+            && request.resource.data.latitude <= 90
+            && request.resource.data.longitude is number
+            && request.resource.data.longitude >= -180
+            && request.resource.data.longitude <= 180
+            && request.resource.data.recipienteCodigo is string
+            && request.resource.data.recipienteCodigo.matches('REC-[A-Z0-9-]+'));
       allow read: if isStaff()
+        || (isCollector() && resource.data.coletorUid == request.auth.uid)
         || (isGenerator() && resource.data.solicitanteUid == request.auth.uid);
-      allow update, delete: if isStaff();
+      allow update: if isStaff()
+        || (isCollector()
+            && resource.data.coletorUid == request.auth.uid
+            && resource.data.status == 'agendada'
+            && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['status', 'recipienteCodigoLido', 'volumeColetadoLitros', 'coletadoPorUid', 'coletadoPorNome', 'coletadaEm', 'updatedAt'])
+            && request.resource.data.status == 'coletada'
+            && request.resource.data.recipienteCodigoLido == resource.data.recipienteCodigo
+            && request.resource.data.coletadoPorUid == request.auth.uid
+            && request.resource.data.volumeColetadoLitros is number
+            && request.resource.data.volumeColetadoLitros > 0
+            && request.resource.data.coletadaEm == request.time
+            && request.resource.data.updatedAt == request.time);
+      allow delete: if isStaff();
     }
 
     // ---------- Lotes ----------
@@ -52,7 +92,7 @@ service cloud.firestore {
       allow read: if isOperational();
       allow create: if isStaff() || isCollector();
       allow update: if isStaff() || isCollector() || isDestination();
-      allow delete: if isAdmin();
+      allow delete: if false;
     }
 
     // ---------- Recebimentos ----------
@@ -60,13 +100,13 @@ service cloud.firestore {
       allow read: if isOperational();
       allow create: if isStaff() || isCollector();
       allow update: if isStaff();
-      allow delete: if isAdmin();
+      allow delete: if false;
     }
 
     // ---------- Destinações ----------
     match /destinacoes/{id} {
       allow read, create, update: if isStaff() || isDestination();
-      allow delete: if isAdmin();
+      allow delete: if false;
     }
 
     // ---------- Histórico (só cria, nunca edita) ----------

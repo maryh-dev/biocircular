@@ -10,7 +10,7 @@ import {
   firebaseConfigured,
   firebaseConfigMissing,
 } from '../../services/firebase.js';
-import { definirNomePendente } from '../../services/db.js';
+import { definirNomePendente, definirTelefonePendente } from '../../services/db.js';
 import {
   ArrowLeft,
   ArrowRight,
@@ -21,6 +21,7 @@ import {
   Leaf,
   LockKeyhole,
   Mail,
+  Phone,
   ShieldCheck,
   UserRound,
 } from 'lucide-react';
@@ -46,6 +47,10 @@ const mensagemErro = (error) => {
 
   if (code.includes('too-many-requests')) {
     return 'Muitas tentativas. Aguarde um pouco e tente novamente.';
+  }
+
+  if (code.includes('user-disabled')) {
+    return 'Esta conta está suspensa. Fale com um administrador para recuperar o acesso.';
   }
 
   if (code.includes('network-request-failed')) {
@@ -135,6 +140,7 @@ function Campo({
 export default function Login({ erroInicial, onNavigate }) {
   const [modo, setModo] = useState('entrar');
   const [nome, setNome] = useState('');
+  const [telefone, setTelefone] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [loading, setLoading] = useState(false);
@@ -156,16 +162,37 @@ export default function Login({ erroInicial, onNavigate }) {
       return;
     }
 
+    if (cadastro) {
+      const telefoneNormalizado = telefone.trim();
+      const telefoneValidado = /^(?:\+?55\s?)?(?:\(?\d{2}\)?\s?\d{4,5}-?\d{4})$/.test(telefoneNormalizado)
+        || /^(?:\+?\d{10,15})$/.test(telefoneNormalizado.replace(/\s+/g, ''));
+
+      if (!telefoneNormalizado || !telefoneValidado) {
+        setStatus({
+          type: 'error',
+          text: 'Informe um telefone válido com DDD e número. Ex.: +55 (11) 91234-5678.',
+        });
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
       if (cadastro) {
         definirNomePendente(nome.trim());
+        definirTelefonePendente(telefone.trim());
         await createUserWithEmailAndPassword(
           auth,
           email.trim(),
           senha
         );
+
+        setStatus({
+          type: 'success',
+          text: 'Sua conta foi criada com sucesso. A solicitação foi enviada ao administrador. Para ser aprovado, entre em contato com a empresa pelo telefone (11) 4002-8922.',
+        });
+        return;
       } else {
         await signInWithEmailAndPassword(
           auth,
@@ -389,16 +416,29 @@ export default function Login({ erroInicial, onNavigate }) {
 
             <form className="space-y-5" onSubmit={handleSubmit}>
               {cadastro && (
-                <Campo
-                  id="login-nome"
-                  label="Nome"
-                  type="text"
-                  autoComplete="name"
-                  value={nome}
-                  onChange={(e) => setNome(e.target.value)}
-                  placeholder="Seu nome ou da empresa"
-                  icon={UserRound}
-                />
+                <>
+                  <Campo
+                    id="login-nome"
+                    label="Nome"
+                    type="text"
+                    autoComplete="name"
+                    value={nome}
+                    onChange={(e) => setNome(e.target.value)}
+                    placeholder="Seu nome ou da empresa"
+                    icon={UserRound}
+                  />
+
+                  <Campo
+                    id="login-telefone"
+                    label="Telefone de contato"
+                    type="tel"
+                    autoComplete="tel"
+                    value={telefone}
+                    onChange={(e) => setTelefone(e.target.value)}
+                    placeholder="Ex.: +55 (11) 91234-5678"
+                    icon={Phone}
+                  />
+                </>
               )}
 
               <Campo

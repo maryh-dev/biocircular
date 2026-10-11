@@ -1,48 +1,106 @@
-import React from 'react';
-import { ArrowLeft, CheckCircle2, AlertTriangle } from 'lucide-react';
+import React, { useState } from 'react';
+import { AlertTriangle, ArrowLeft, CheckCircle2, Droplet } from 'lucide-react';
+import { registrarColeta } from '../../services/rotas.js';
 
-export default function RegistrarQuantidade() {
+export default function RegistrarQuantidade({
+  coletaAtual,
+  codigoRecipiente,
+  session,
+  onNavigate,
+}) {
+  const [volume, setVolume] = useState('');
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState('');
+
+  async function confirmar(event) {
+    event.preventDefault();
+    setErro('');
+    setSalvando(true);
+
+    try {
+      await registrarColeta(coletaAtual, codigoRecipiente, volume, session.user, session.profile?.nome);
+      onNavigate?.('coletor-inicio');
+    } catch (error) {
+      console.error('Não foi possível registrar a coleta:', error);
+      setErro(error.message || 'Não foi possível registrar a coleta. Tente novamente.');
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  if (!coletaAtual || !codigoRecipiente) {
+    return (
+      <main className="mx-auto min-h-[70vh] max-w-2xl px-4 py-10">
+        <section className="rounded-2xl border border-bioclube-border bg-white p-6 text-center shadow-sm">
+          <AlertTriangle className="mx-auto h-10 w-10 text-amber-700" />
+          <h1 className="mt-4 text-xl font-bold">Valide o recipiente primeiro</h1>
+          <p className="mt-2 text-sm text-bioclube-textSub">A quantidade só pode ser registrada depois que o QR Code da parada for conferido.</p>
+          <button type="button" onClick={() => onNavigate?.('coletor-qr')} className="mt-5 rounded-lg bg-bioclube-dark px-4 py-2.5 text-sm font-bold text-white">
+            Ler QR Code
+          </button>
+        </section>
+      </main>
+    );
+  }
+
   return (
-    <div className="flex justify-center bg-gray-900 min-h-screen py-6">
-      <div className="w-[375px] bg-[#F5F7FA] text-[#17202A] min-h-[812px] rounded-[40px] shadow-2xl overflow-hidden flex flex-col justify-between p-6 border-8 border-gray-800">
-        <div className="flex justify-between items-center pt-6">
-          <ArrowLeft className="w-5 h-5 cursor-pointer" />
-          <h1 className="text-base font-bold">Registrar quantidade</h1>
-          <div className="w-8 h-8 bg-[#C58A32] text-[#0B1726] font-bold rounded-full flex items-center justify-center text-xs">CA</div>
-        </div>
-
-        {/* Barra de Progresso */}
-        <div className="flex gap-1">
-          <div className="h-1.5 bg-green-600 flex-1 rounded-full"></div>
-          <div className="h-1.5 bg-[#C58A32] flex-1 rounded-full"></div>
-          <div className="h-1.5 bg-gray-200 flex-1 rounded-full"></div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl border border-[#D9E0E7] space-y-1">
-          <div className="flex items-center gap-2 font-bold text-xs text-green-700">
-            <CheckCircle2 className="w-4 h-4" /> REC-00482 confirmado
-          </div>
-          <p className="text-[11px] text-[#667085]">Bombona · capacidade 200 L</p>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl border-2 border-[#C58A32] text-center space-y-2 shadow-sm">
-          <span className="text-[10px] text-[#667085] font-bold block">QUANTIDADE COLETADA</span>
-          <div className="text-4xl font-black text-[#0B1726]">176 L</div>
-          <p className="text-[11px] text-green-700 font-medium">4 L abaixo da estimativa · dentro da tolerância</p>
-        </div>
-
-        <div className="space-y-3">
-          <input type="text" placeholder="Observação (Opcional)" className="w-full p-3 border rounded-lg text-xs" />
-          <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg text-[11px] text-blue-900 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-blue-600 flex-shrink-0" />
-            <span>Confirme a quantidade medida antes de prosseguir.</span>
-          </div>
-        </div>
-
-        <button className="w-full py-3.5 bg-[#0B1726] text-white rounded-xl text-xs font-bold hover:bg-[#16324F]">
-          Confirmar quantidade →
+    <main className="min-h-screen bg-bioclube-light px-4 py-6 text-bioclube-textMain sm:px-6 sm:py-10">
+      <div className="mx-auto max-w-xl space-y-5">
+        <button type="button" onClick={() => onNavigate?.('coletor-qr')} className="inline-flex items-center gap-2 text-sm font-semibold text-bioclube-dark">
+          <ArrowLeft className="h-4 w-4" /> Voltar para leitura do QR
         </button>
+        <form onSubmit={confirmar} className="space-y-5 rounded-2xl border border-bioclube-border bg-white p-5 shadow-sm sm:p-7">
+          <header className="flex items-start gap-4">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><Droplet className="h-6 w-6" /></span>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">Recipiente confirmado</p>
+              <h1 className="mt-1 text-xl font-extrabold">Registrar quantidade</h1>
+              <p className="mt-1 text-sm text-bioclube-textSub">{coletaAtual.solicitanteNome || 'Gerador'} · {coletaAtual.endereco}</p>
+            </div>
+          </header>
+
+          <div className="flex items-center gap-3 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-900">
+            <CheckCircle2 className="h-5 w-5 shrink-0" />
+            <span>QR validado: <strong className="font-mono">{codigoRecipiente}</strong></span>
+          </div>
+
+          <div>
+            <label htmlFor="volume-coletado" className="mb-2 block text-sm font-semibold">Volume realmente coletado</label>
+            <div className="flex items-center gap-2">
+              <input
+                id="volume-coletado"
+                type="number"
+                inputMode="decimal"
+                min="0.01"
+                step="0.01"
+                required
+                autoFocus
+                value={volume}
+                onChange={(event) => setVolume(event.target.value)}
+                placeholder="Ex.: 176"
+                className="min-w-0 flex-1 rounded-lg border border-bioclube-border px-3 py-3 text-lg font-semibold"
+              />
+              <span className="text-sm font-bold text-bioclube-textSub">litros</span>
+            </div>
+            <p className="mt-2 text-xs text-bioclube-textSub">
+              Volume estimado pelo gerador: {Number(coletaAtual.volumeLitros) || 0} L
+            </p>
+          </div>
+
+          {erro && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{erro}</p>}
+          <div className="flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-5 text-amber-900">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            <p>Ao confirmar, esta parada será marcada como coletada e sairá da sua rota pendente. Confira a medição antes de prosseguir.</p>
+          </div>
+          <button
+            type="submit"
+            disabled={salvando || !Number(volume)}
+            className="w-full rounded-xl bg-bioclube-dark px-4 py-3 text-sm font-bold text-white transition hover:bg-bioclube-secondary disabled:opacity-60"
+          >
+            {salvando ? 'Salvando coleta…' : 'Confirmar coleta'}
+          </button>
+        </form>
       </div>
-    </div>
+    </main>
   );
 }
