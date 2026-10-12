@@ -166,4 +166,4 @@ Para detalhes sobre regras, coleções, limitações e cuidados de publicação,
 
 ## Licença
 
-Este projeto não define uma licença pública no repositório. Consulte os responsáveis pelo projeto antes de redistribuir ou reutilizar o código.
+Este projeto não define uma licença pública.
