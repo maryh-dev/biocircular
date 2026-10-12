@@ -146,7 +146,7 @@ Geolocalização e câmera funcionam em `localhost` ou em uma aplicação public
 
 Para detalhes sobre regras, coleções, limitações e cuidados de publicação, consulte [BANCO_SEGURANCA_FIRESTORE.md](./BANCO_SEGURANCA_FIRESTORE.md).
 
-## Estrutura principal
+## Estrutura
 
 ```text
 .
