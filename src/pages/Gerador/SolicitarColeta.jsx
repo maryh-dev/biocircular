@@ -17,8 +17,6 @@ export default function SolicitarColeta({ session, onNavigate }) {
   const [observacoes, setObservacoes] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState(null);
-  const nome = session?.profile?.nome || 'Gerador';
-  const sigla = nome.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase();
 
   function usarLocalizacaoAtual() {
     if (!navigator.geolocation) {
@@ -88,16 +86,8 @@ export default function SolicitarColeta({ session, onNavigate }) {
             <p className="text-xs text-bioclube-textSub mt-1">Informe o recipiente e escolha a melhor janela para retirada.</p>
           </div>
 
-          <form onSubmit={enviar} className="bg-white p-4 md:p-8 rounded-xl border border-bioclube-border shadow-sm grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-6">
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b pb-4 text-xs font-semibold">
-                <span className="w-6 h-6 rounded-full bg-bioclube-dark text-white flex items-center justify-center">1</span> Recipiente
-                <span className="text-gray-300">——</span>
-                <span className="w-6 h-6 rounded-full bg-bioclube-amber text-bioclube-dark flex items-center justify-center">2</span> Data e janela
-                <span className="text-gray-300">——</span>
-                <span className="w-6 h-6 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center">3</span> Revisão
-              </div>
-
+          <form onSubmit={enviar} className="bg-white p-4 md:p-8 rounded-xl border border-bioclube-border shadow-sm">
+            <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold mb-1">Data preferencial</label>
@@ -187,14 +177,6 @@ export default function SolicitarColeta({ session, onNavigate }) {
               </div>
             </div>
 
-            {/* Resumo Lateral */}
-            <div className="bg-gray-50 p-6 rounded-xl border border-bioclube-border space-y-4">
-              <h3 className="font-bold text-sm">Resumo</h3>
-              <div className="text-xs space-y-3">
-                <div><span className="text-bioclube-textSub block">GERADOR</span><strong>{nome}</strong></div>
-                <div><span className="text-bioclube-textSub block">VOLUME ESTIMADO</span><strong className="text-base text-bioclube-amber">{volumeLitros ? `${volumeLitros} L` : '—'}</strong></div>
-              </div>
-            </div>
           </form>
         </div>
     </div>

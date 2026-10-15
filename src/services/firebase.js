@@ -1,7 +1,8 @@
-import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getDatabase } from "firebase/database";
-import { getFirestore } from "firebase/firestore";
+// Inicialização do Firebase (SDK instalado via npm, não via CDN).
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+import { getDatabase } from 'firebase/database';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -10,21 +11,20 @@ const firebaseConfig = {
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
+};
 };
 
-// Verifica se as chaves principais estão presentes
-export const firebaseConfigured = Boolean(
-  firebaseConfig.apiKey && firebaseConfig.projectId
-);
-export const firebaseConfigMissing = !firebaseConfigured;
+export const firebaseConfigMissing = Object.entries(firebaseConfig)
+  .filter(([, value]) => !value)
+  .map(([key]) => key);
 
-// Inicializa a aplicação Firebase
-const app = initializeApp(firebaseConfig);
+export const firebaseConfigured = firebaseConfigMissing.length === 0;
 
-// Exporta os serviços necessários para todas as telas
-export const auth = getAuth(app);
-export const database = getDatabase(app); // Realtime Database (Wokwi)
-export const db = getFirestore(app);      // Cloud Firestore (se usado no projeto)
+// Só inicializa se o .env.local estiver preenchido, para o app abrir e mostrar um aviso claro.
+const app = firebaseConfigured ? (getApps().length ? getApp() : initializeApp(firebaseConfig)) : null;
 
-export default app;
+export const auth = app ? getAuth(app) : null;
+export const db = app ? getFirestore(app) : null;
+export const database = app && import.meta.env.VITE_FIREBASE_DATABASE_URL
+  ? getDatabase(app, import.meta.env.VITE_FIREBASE_DATABASE_URL)
+  : null;

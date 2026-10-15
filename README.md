@@ -69,17 +69,19 @@ npm install
    VITE_FIREBASE_STORAGE_BUCKET=
    VITE_FIREBASE_MESSAGING_SENDER_ID=
    VITE_FIREBASE_APP_ID=
+  VITE_FIREBASE_DATABASE_URL=
    ```
 
 3. Ative o Firebase Authentication com o provedor de e-mail e senha.
 4. Configure o Cloud Firestore.
-5. Publique as regras e os índices deste projeto:
+5. Se for usar o monitoramento de bombonas, ative o Realtime Database e informe a URL exibida no console em `VITE_FIREBASE_DATABASE_URL`.
+6. Publique as regras e os índices deste projeto:
 
    ```powershell
    firebase deploy --only firestore:rules,firestore:indexes --project SEU_PROJECT_ID
    ```
 
-6. Defina o primeiro administrador no Firebase Console, alterando o documento `users/{uid}` para conter:
+7. Defina o primeiro administrador no Firebase Console, alterando o documento `users/{uid}` para conter:
 
    ```json
    {

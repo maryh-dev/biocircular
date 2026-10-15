@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { Bell, Download, MapPin, Plus, Search, ShieldCheck } from 'lucide-react';
+import { Activity, Download, MapPin, Plus, QrCode, ShieldCheck } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import DashboardBombona from '../../components/DashboardBombona.jsx';
 
 const MODELOS_PADRAO = [
   'Bombona 200 L',
@@ -11,36 +12,11 @@ const MODELOS_PADRAO = [
 ];
 
 const STATUS_PADRAO = ['Ativo', 'Em manutenção', 'Inativo'];
-
-function gerarCodigoRecipiente(lista) {
-  const numeros = lista
-    .map((item) => Number(String(item.codigo).replace(/\D/g, '')) || 0)
-    .filter(Boolean);
-
-  const ultimo = numeros.length ? Math.max(...numeros) : 0;
-  return `REC-${String(ultimo + 1).padStart(5, '0')}`;
-}
+const BOMBONAS_DISPONIVEIS = ['BOM-001', 'BOM-002', 'BOM-003'];
 
 export default function RecipienteDetalhes({ onNavigate }) {
   const qrRef = useRef(null);
-  const [listaRecipientes, setListaRecipientes] = useState([
-    {
-      codigo: 'REC-00482',
-      modelo: 'Bombona 200 L',
-      capacidade: 200,
-      local: 'Cozinha · Doca lateral',
-      status: 'Ativo',
-      observacoes: 'Uso operacional diário',
-    },
-    {
-      codigo: 'REC-00483',
-      modelo: 'Tambor 60 L',
-      capacidade: 60,
-      local: 'Estoque secundário',
-      status: 'Em manutenção',
-      observacoes: 'Reteste de vedação',
-    },
-  ]);
+  const [listaRecipientes, setListaRecipientes] = useState([]);
 
   const [forma, setForma] = useState({
     codigo: '',
@@ -50,8 +26,14 @@ export default function RecipienteDetalhes({ onNavigate }) {
     status: 'Ativo',
     observacoes: '',
   });
+  const [abaAtiva, setAbaAtiva] = useState('cadastro');
+  const [codigoSelecionado, setCodigoSelecionado] = useState(null);
+  const [erroCadastro, setErroCadastro] = useState(null);
 
-  const codigoAtual = useMemo(() => forma.codigo || gerarCodigoRecipiente(listaRecipientes), [forma.codigo, listaRecipientes]);
+  const codigoAtual = useMemo(
+    () => forma.codigo || codigoSelecionado || 'BOM-001',
+    [forma.codigo, codigoSelecionado]
+  );
 
   function baixarEtiqueta() {
     const svg = qrRef.current?.querySelector('svg');
@@ -69,15 +51,15 @@ export default function RecipienteDetalhes({ onNavigate }) {
     window.setTimeout(() => URL.revokeObjectURL(url), 0);
   }
 
-  function atualizarCodigoAutomatico(novoEstado) {
-    const codigo = novoEstado.codigo || gerarCodigoRecipiente(listaRecipientes);
-    setForma({ ...novoEstado, codigo });
-  }
-
   function handleSubmit(event) {
     event.preventDefault();
+    if (!forma.codigo) {
+      setErroCadastro('Selecione uma bombona antes de cadastrar.');
+      return;
+    }
+
     const proximoRecipiente = {
-      codigo: forma.codigo || gerarCodigoRecipiente(listaRecipientes),
+      codigo: forma.codigo,
       modelo: forma.modelo,
       capacidade: Number(forma.capacidade) || 0,
       local: forma.local || 'Local não informado',
@@ -85,7 +67,14 @@ export default function RecipienteDetalhes({ onNavigate }) {
       observacoes: forma.observacoes || 'Sem observações',
     };
 
+    if (listaRecipientes.some((recipiente) => recipiente.codigo === proximoRecipiente.codigo)) {
+      setErroCadastro('Essa bombona já está cadastrada. Informe outro código.');
+      return;
+    }
+
     setListaRecipientes((atual) => [proximoRecipiente, ...atual]);
+    setCodigoSelecionado(proximoRecipiente.codigo);
+    setErroCadastro(null);
     setForma({
       codigo: '',
       modelo: MODELOS_PADRAO[0],
@@ -94,6 +83,7 @@ export default function RecipienteDetalhes({ onNavigate }) {
       status: 'Ativo',
       observacoes: '',
     });
+    setAbaAtiva('qrcode');
   }
 
   return (
@@ -101,19 +91,42 @@ export default function RecipienteDetalhes({ onNavigate }) {
       <div className="p-4 md:p-8 space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h1 className="text-xl md:text-2xl font-bold">Cadastro de recipientes</h1>
-              <p className="text-xs text-bioclube-textSub mt-1">Modo de teste local: os dados ficam apenas no navegador, sem salvar no Firebase.</p>
+              <h1 className="text-xl md:text-2xl font-bold">Bombonas</h1>
+              <p className="text-xs text-bioclube-textSub mt-1">Cadastre bombonas, gere etiquetas e acompanhe o monitoramento.</p>
             </div>
-            <span className="rounded-full bg-amber-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-amber-800">
-              Dados de teste
-            </span>
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,0.96fr)_minmax(0,1.04fr)] gap-6">
+          <div className="flex flex-wrap gap-2 border-b border-bioclube-border pb-3" role="tablist" aria-label="Seções de bombonas">
+            {[
+              { id: 'cadastro', label: 'Cadastro', Icon: Plus },
+              { id: 'qrcode', label: 'QR Code', Icon: QrCode },
+              { id: 'monitoramento', label: 'Monitoramento', Icon: Activity },
+            ].map(({ id, label, Icon }) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={abaAtiva === id}
+                onClick={() => setAbaAtiva(id)}
+                className={`inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold transition ${
+                  abaAtiva === id
+                    ? 'bg-bioclube-dark text-white'
+                    : 'text-bioclube-textSub hover:bg-white hover:text-bioclube-textMain'
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <div>
+          {abaAtiva === 'cadastro' && (
+            <>
             <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl border border-bioclube-border bg-white p-5 shadow-sm sm:p-6">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-amber-700">Novo recipiente</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-amber-700">Nova bombona</p>
                   <h2 className="mt-1 text-lg font-bold">Identificação</h2>
                 </div>
                 <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-800">
@@ -122,15 +135,22 @@ export default function RecipienteDetalhes({ onNavigate }) {
               </div>
 
               <div>
-                <label htmlFor="codigo-rec" className="mb-1.5 block text-sm font-semibold">Identificador único</label>
-                <input
-                  id="codigo-rec"
+                <label htmlFor="codigo-bombona" className="mb-1.5 block text-sm font-semibold">Bombona disponível</label>
+                <select
+                  id="codigo-bombona"
                   value={forma.codigo}
-                  onChange={(event) => atualizarCodigoAutomatico({ ...forma, codigo: event.target.value.toUpperCase() })}
-                  placeholder="Ex.: REC-00001"
-                  className="w-full rounded-xl border border-bioclube-border px-3 py-2.5 text-sm uppercase"
-                />
-                <p className="mt-2 text-[11px] text-bioclube-textSub">Se vazio, o app cria o próximo código automaticamente.</p>
+                  onChange={(event) => {
+                    setErroCadastro(null);
+                    setForma((atual) => ({ ...atual, codigo: event.target.value }));
+                  }}
+                  className="w-full rounded-xl border border-bioclube-border bg-white px-3 py-2.5 text-sm"
+                >
+                  <option value="">Selecione uma bombona</option>
+                  {BOMBONAS_DISPONIVEIS
+                    .filter((codigo) => !listaRecipientes.some((item) => item.codigo === codigo))
+                    .map((codigo) => <option key={codigo} value={codigo}>{codigo}</option>)}
+                </select>
+                <p className="mt-2 text-[11px] text-bioclube-textSub">Ao cadastrar, o monitoramento passa a buscar os dados deste dispositivo.</p>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
@@ -199,12 +219,43 @@ export default function RecipienteDetalhes({ onNavigate }) {
               </div>
 
               <button type="submit" className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-bioclube-dark px-4 py-3 text-sm font-bold text-white">
-                <Plus className="h-4 w-4" /> Adicionar recipiente de teste
+                <Plus className="h-4 w-4" /> Cadastrar bombona
               </button>
+              {erroCadastro && (
+                <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{erroCadastro}</p>
+              )}
             </form>
 
-            <div className="space-y-6">
-              <div className="rounded-2xl border border-bioclube-border bg-white p-5 shadow-sm sm:p-6">
+            <div className="mt-6 rounded-2xl border border-bioclube-border bg-white p-5 shadow-sm sm:p-6">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-amber-700">Bombonas do gerador</p>
+                  <h2 className="mt-1 text-lg font-bold">{listaRecipientes.length} cadastrada{listaRecipientes.length === 1 ? '' : 's'}</h2>
+                </div>
+                <span className="text-xs text-bioclube-textSub">Prontas para identificação</span>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {listaRecipientes.map((recipiente) => (
+                  <button
+                    key={recipiente.codigo}
+                    type="button"
+                    onClick={() => {
+                      setCodigoSelecionado(recipiente.codigo);
+                      setAbaAtiva('qrcode');
+                    }}
+                    className="rounded-xl border border-bioclube-border p-3 text-left transition hover:border-bioclube-amber hover:bg-amber-50"
+                  >
+                    <strong className="font-mono text-sm">{recipiente.codigo}</strong>
+                    <span className="mt-1 block text-xs text-bioclube-textSub">{recipiente.modelo} · {recipiente.capacidade} L</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            </>
+          )}
+
+          {abaAtiva === 'qrcode' && (
+              <div className="mx-auto max-w-2xl rounded-2xl border border-bioclube-border bg-white p-5 shadow-sm sm:p-6">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-[0.14em] text-amber-700">Pré-visualização</p>
@@ -240,26 +291,11 @@ export default function RecipienteDetalhes({ onNavigate }) {
                   <Download className="h-4 w-4" /> Baixar QR Code
                 </button>
               </div>
+          )}
 
-              <div className="rounded-2xl border border-bioclube-border bg-white p-5 shadow-sm sm:p-6">
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-amber-700">Recipientes em teste</p>
-                <div className="mt-4 space-y-3">
-                  {listaRecipientes.map((recipiente) => (
-                    <article key={`${recipiente.codigo}-${recipiente.modelo}`} className="rounded-xl border border-bioclube-border p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <strong className="font-mono text-sm">{recipiente.codigo}</strong>
-                        <span className={`rounded-full px-2 py-1 text-[10px] font-bold ${
-                          recipiente.status === 'Ativo' ? 'bg-emerald-50 text-emerald-800' :
-                          recipiente.status === 'Em manutenção' ? 'bg-amber-50 text-amber-800' : 'bg-slate-100 text-slate-800'
-                        }`}>{recipiente.status}</span>
-                      </div>
-                      <p className="mt-2 text-xs text-bioclube-textSub">{recipiente.modelo} · {recipiente.capacidade} L</p>
-                      <p className="mt-1 text-xs text-bioclube-textSub">{recipiente.local}</p>
-                    </article>
-                  ))}
-                </div>
-              </div>
-            </div>
+          {abaAtiva === 'monitoramento' && (
+            <DashboardBombona bombonasCadastradas={listaRecipientes.map(({ codigo }) => codigo)} />
+          )}
           </div>
         </div>
     </div>

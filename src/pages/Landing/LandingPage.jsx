@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useState } from 'react';
+import React, { useState } from 'react';
 import {
   ArrowRight,
   BarChart3,
@@ -17,10 +17,6 @@ import {
   Recycle,
   FileCheck2,
 } from 'lucide-react';
-
-import heroImage from '../../assets/hero.png';
-
-const DrumViewer = lazy(() => import('../../components/DrumViewer.jsx'));
 
 const stepIcons = [ClipboardList, QrCode, Route, Truck, CircleUserRound];
 const featureIcons = [ShieldCheck, Cpu, BarChart3];
@@ -318,33 +314,18 @@ function Eyebrow({ children, light = false }) {
   );
 }
 
-function Brand({ light = false, copy }) {
+function Brand({ light = false, copy, header = false }) {
   return (
     <a
       href="#top"
-      className="inline-flex shrink-0 items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D6A04A] focus-visible:ring-offset-4"
+      className={`inline-flex shrink-0 items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D6A04A] focus-visible:ring-offset-4 ${header ? 'sm:-ml-8' : ''}`}
       aria-label={copy.brandAria}
     >
-      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#D6A04A] text-sm font-extrabold tracking-tight text-[#0B1726] shadow-sm">
-        BC
-      </span>
-
-      <span>
-        <span
-          className={`block text-base font-extrabold tracking-[0.12em] sm:text-lg ${
-            light ? 'text-white' : 'text-[#17202A]'
-          }`}
-        >
-          BIOCIRCULAR
-        </span>
-        <span
-          className={`mt-0.5 block text-[11px] ${
-            light ? 'text-slate-400' : 'text-[#667085]'
-          }`}
-        >
-          {copy.brandSubtitle}
-        </span>
-      </span>
+      <img
+        src="/logo_titulo.png"
+        alt="BIOCIRCULAR"
+        className="block h-14 w-auto sm:h-16"
+      />
     </a>
   );
 }
@@ -379,8 +360,8 @@ export default function LandingPage({ onNavigate }) {
     <div lang={idioma === 'pt' ? 'pt-BR' : idioma} className="min-h-screen overflow-x-clip bg-[#F5F7FA] font-sans text-[#17202A] antialiased">
       {/* Cabeçalho */}
       <header className="relative z-50 border-b border-white/10 bg-[#0B1726] text-white shadow-sm">
-        <div className="mx-auto flex min-h-[76px] max-w-[1320px] items-center justify-between gap-5 px-5 py-3 sm:px-8 lg:px-10">
-          <Brand light copy={copy} />
+        <div className="mx-auto flex min-h-[76px] w-full max-w-[1320px] items-center justify-between gap-5 px-5 py-3 sm:px-8 lg:px-10">
+          <Brand light copy={copy} header />
 
           <nav
             aria-label={copy.mainNav}
@@ -502,18 +483,19 @@ export default function LandingPage({ onNavigate }) {
             className="pointer-events-none absolute -right-24 -top-24 h-[420px] w-[420px] rounded-full border border-white/[0.06]"
           />
 
-          <div className="relative mx-auto grid max-w-[1320px] items-center gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:gap-14">
+          <div className="relative mx-auto w-full max-w-[1320px]">
             <div className="relative z-10">
               <Eyebrow light>{copy.hero.eyebrow}</Eyebrow>
 
-              <h1 className="mt-6 max-w-2xl text-4xl font-bold leading-[1.12] tracking-tight text-white sm:text-5xl lg:text-[3.5rem] xl:text-[3.8rem]">
+              <h1 className="mt-6 max-w-4xl text-4xl font-bold leading-[1.12] tracking-tight text-white sm:text-5xl lg:text-[3.25rem] xl:text-[3.5rem]">
                 {copy.hero.titleStart}
-                <span className="mt-2 block text-[#E2AD59]">
+                {' '}
+                <span className="text-[#E2AD59]">
                   {copy.hero.titleEnd}
                 </span>
               </h1>
 
-              <p className="mt-6 max-w-xl text-base leading-7 text-slate-300 sm:text-lg sm:leading-8">
+              <p className="mt-6 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg sm:leading-8">
                 {copy.hero.description}
               </p>
 
@@ -535,36 +517,6 @@ export default function LandingPage({ onNavigate }) {
                 </a>
               </div>
 
-              <div className="mt-9 grid gap-3 border-t border-white/10 pt-6 sm:grid-cols-2">
-                {copy.hero.badges.slice(0, 2).map((item) => (
-                  <div key={item} className="flex items-center gap-2 text-xs font-medium text-slate-300 sm:text-sm">
-                    <Check className="h-4 w-4 shrink-0 text-[#E2AD59]" />
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="relative mx-auto w-full max-w-2xl lg:ml-auto lg:mr-0">
-              <div className="absolute -inset-4 rounded-3xl bg-[#284762]/20 blur-2xl" />
-
-              <div className="relative overflow-hidden rounded-2xl border border-white/15 shadow-2xl shadow-black/30">
-                <Suspense
-                  fallback={(
-                    <img
-                      src={heroImage}
-                      alt={copy.hero.imageAlt}
-                      className="block aspect-[5/4] w-full object-cover sm:aspect-[6/5] lg:aspect-[5/4]"
-                    />
-                  )}
-                >
-                  <DrumViewer
-                    fallbackImage={heroImage}
-                    language={idioma}
-                    imageAlt={copy.hero.imageAlt}
-                  />
-                </Suspense>
-              </div>
             </div>
           </div>
         </section>

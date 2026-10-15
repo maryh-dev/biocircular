@@ -29,9 +29,8 @@ export default function SolicitacoesOperacao({ session }) {
     <div className="flex min-h-screen bg-bioclube-light font-sans text-bioclube-textMain">
       <aside className="hidden lg:flex lg:w-64 flex-shrink-0 bg-bioclube-dark text-white flex-col justify-between p-6">
         <div>
-          <div className="flex items-center gap-2 mb-10">
-            <span className="bg-bioclube-amber text-bioclube-dark font-bold px-2 py-0.5 rounded text-xs">BC</span>
-            <span className="font-bold tracking-wider text-sm">BIOCIRCULAR</span>
+          <div className="mb-10">
+            <img src="/logo.png" alt="BIOCIRCULAR" className="h-14 w-11 object-contain" />
           </div>
           <div className="bg-bioclube-secondary p-3 rounded-lg mb-6 border border-gray-800">
             <div className="text-xs font-bold text-bioclube-amber">{sigla}</div>

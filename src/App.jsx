@@ -361,9 +361,11 @@ export default function App() {
               className="flex min-w-0 items-center gap-3 rounded-xl text-left transition hover:opacity-90"
               aria-label="Ir para o início da sua área"
             >
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-bioclube-amber text-xs font-black tracking-tight text-bioclube-dark shadow-md shadow-black/10">
-                BC
-              </span>
+              <img
+                src="/logo.png"
+                alt="BIOCIRCULAR"
+                className="h-14 w-11 shrink-0 object-contain"
+              />
               <span className="hidden min-w-0 sm:block">
                 <span className="block text-sm font-extrabold tracking-[0.12em]">BIOCIRCULAR</span>
                 <span className="mt-0.5 block text-[10px] text-slate-400">Gestão e rastreabilidade</span>

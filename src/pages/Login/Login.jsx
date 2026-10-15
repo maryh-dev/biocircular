@@ -17,8 +17,6 @@ import {
   BarChart3,
   CheckCircle2,
   CircleHelp,
-  Fingerprint,
-  Leaf,
   LockKeyhole,
   Mail,
   Phone,
@@ -71,9 +69,11 @@ const mensagemErro = (error) => {
 function Marca({ compact = false }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-bioclube-amber text-sm font-extrabold tracking-tight text-bioclube-dark shadow-lg">
-        BC
-      </span>
+      <img
+        src="/logo.png"
+        alt="BIOCIRCULAR"
+        className="h-14 w-11 object-contain"
+      />
 
       <div>
         <span
@@ -259,7 +259,7 @@ export default function Login({ erroInicial, onNavigate }) {
   }
 
   return (
-    <main className="relative min-h-screen bg-[#F3F6F9] font-sans text-bioclube-textMain lg:grid lg:grid-cols-2">
+    <main className="relative min-h-screen bg-[#F3F6F9] font-sans text-bioclube-textMain">
       {/* Seta discreta para voltar à página inicial */}
       <button
         type="button"
@@ -275,102 +275,8 @@ export default function Login({ erroInicial, onNavigate }) {
         />
       </button>
 
-      {/* Painel institucional */}
-      <section className="relative hidden min-h-screen flex-col justify-between overflow-hidden bg-bioclube-dark p-10 text-white lg:flex xl:p-14">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -right-40 -top-40 h-[520px] w-[520px] rounded-full border border-white/[0.07]"
-        />
-
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -right-20 -top-20 h-[360px] w-[360px] rounded-full border border-white/[0.08]"
-        />
-
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -bottom-48 -left-32 h-[430px] w-[430px] rounded-full bg-emerald-500/[0.07] blur-3xl"
-        />
-
-        <div className="relative z-10">
-          <Marca />
-
-          <div className="mt-24 max-w-xl xl:mt-28">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-2 text-[11px] font-semibold tracking-wide text-slate-300">
-              <Leaf className="h-4 w-4 text-bioclube-amber" />
-              TECNOLOGIA PARA A ECONOMIA CIRCULAR
-            </span>
-
-            <h1 className="mt-7 text-4xl font-bold leading-[1.15] tracking-tight xl:text-5xl">
-              Da coleta à destinação,
-              <span className="mt-2 block text-bioclube-amber">
-                cada etapa importa.
-              </span>
-            </h1>
-
-            <p className="mt-6 max-w-md text-base leading-7 text-slate-300">
-              Organize a operação de óleo e gordura residual com uma visão
-              integrada de solicitações, coletas, lotes e destinação final.
-            </p>
-          </div>
-
-          {/* Resumo visual institucional */}
-          <div className="mt-12 max-w-lg rounded-2xl border border-white/10 bg-white/[0.05] p-5 backdrop-blur-sm xl:mt-14">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-bioclube-amber/15 text-bioclube-amber">
-                  <Fingerprint className="h-5 w-5" />
-                </div>
-
-                <div>
-                  <p className="text-sm font-semibold text-white">
-                    Rastreabilidade operacional
-                  </p>
-
-                  <p className="mt-1 text-xs text-slate-400">
-                    Origem, acompanhamento e destino
-                  </p>
-                </div>
-              </div>
-
-              <ShieldCheck
-                aria-hidden="true"
-                className="h-6 w-6 shrink-0 text-bioclube-amber"
-              />
-            </div>
-
-            <div className="mt-5 grid grid-cols-3 gap-3 border-t border-white/10 pt-5">
-              {[
-                ['01', 'Identificação'],
-                ['02', 'Coleta'],
-                ['03', 'Destinação'],
-              ].map(([numero, titulo]) => (
-                <div key={numero}>
-                  <span className="text-xs font-bold text-bioclube-amber">
-                    {numero}
-                  </span>
-
-                  <p className="mt-1 text-xs font-medium text-slate-300">
-                    {titulo}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="relative z-10 mt-10 flex items-center justify-between gap-4 border-t border-white/10 pt-6 text-[11px] text-slate-400">
-          <span>© 2026 BIOCIRCULAR</span>
-
-          <span className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4" />
-            Ambiente de acesso operacional
-          </span>
-        </div>
-      </section>
-
       {/* Área de autenticação */}
-      <section className="flex min-h-screen flex-col items-center justify-center px-5 py-8 sm:px-8 lg:px-12 xl:px-16">
+      <section className="flex min-h-screen flex-col items-center justify-center px-5 py-12 sm:px-8">
         <div className="mb-8 w-full max-w-md lg:hidden">
           <Marca compact />
         </div>
