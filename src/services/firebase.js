@@ -1,7 +1,7 @@
-
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getDatabase } from "firebase/database";
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -13,8 +13,18 @@ const firebaseConfig = {
   databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
 };
 
+// Verifica se as chaves principais estão presentes
+export const firebaseConfigured = Boolean(
+  firebaseConfig.apiKey && firebaseConfig.projectId
+);
+export const firebaseConfigMissing = !firebaseConfigured;
+
+// Inicializa a aplicação Firebase
 const app = initializeApp(firebaseConfig);
 
+// Exporta os serviços necessários para todas as telas
 export const auth = getAuth(app);
-export const database = getDatabase(app);
+export const database = getDatabase(app); // Realtime Database (Wokwi)
+export const db = getFirestore(app);      // Cloud Firestore (se usado no projeto)
+
 export default app;
